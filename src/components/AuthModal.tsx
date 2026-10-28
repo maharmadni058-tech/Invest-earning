@@ -27,7 +27,6 @@ export const AuthModal: React.FC = () => {
     closeAuthModal,
     login,
     register,
-    loginWithDemo,
     users
   } = useApp();
 
@@ -36,7 +35,7 @@ export const AuthModal: React.FC = () => {
 
   // Login form state
   const [loginIdentifier, setLoginIdentifier] = useState('');
-  const [loginPassword, setLoginPassword] = useState('123456');
+  const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -279,7 +278,6 @@ export const AuthModal: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs text-zinc-300 font-medium">Password *</label>
-                    <span className="text-[10px] text-amber-400/80 font-mono">Default: 123456</span>
                   </div>
                   <div className="relative">
                     <input
@@ -324,82 +322,6 @@ export const AuthModal: React.FC = () => {
                   <span>Sign In to Gold Academy</span>
                 </button>
               </form>
-
-              {/* 1-Click Demo Logins for Instant Testing */}
-              <div className="pt-4 border-t border-zinc-800 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-mono">
-                    Instant Demo Accounts:
-                  </span>
-                  <span className="text-[10px] text-emerald-400 font-mono">1-Click Test</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => loginWithDemo('usr-1')}
-                    className="p-2.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-amber-500/30 text-left transition-colors flex items-center gap-2.5"
-                  >
-                    <img
-                      src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
-                      alt="Ahmed"
-                      className="w-7 h-7 rounded-full object-cover border border-amber-400/60"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white truncate">Ahmed Raza Khan</p>
-                      <p className="text-[10px] text-amber-300 font-mono">🥇 Gold Tier (Rs 4,850)</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => loginWithDemo('usr-2')}
-                    className="p-2.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700 text-left transition-colors flex items-center gap-2.5"
-                  >
-                    <img
-                      src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80"
-                      alt="Zainab"
-                      className="w-7 h-7 rounded-full object-cover border border-zinc-600"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white truncate">Zainab Fatima</p>
-                      <p className="text-[10px] text-zinc-300 font-mono">🥈 Silver Tier (Rs 1,950)</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => loginWithDemo('usr-3')}
-                    className="p-2.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700 text-left transition-colors flex items-center gap-2.5"
-                  >
-                    <img
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
-                      alt="Usman"
-                      className="w-7 h-7 rounded-full object-cover border border-zinc-600"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white truncate">Muhammad Usman</p>
-                      <p className="text-[10px] text-amber-600 font-mono">🥉 Bronze Tier (Rs 620)</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => loginWithDemo('usr-4')}
-                    className="p-2.5 rounded-xl bg-red-950/40 hover:bg-red-950/70 border border-red-500/40 text-left transition-colors flex items-center gap-2.5"
-                  >
-                    <img
-                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80"
-                      alt="Sikandar"
-                      className="w-7 h-7 rounded-full object-cover border border-red-500"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-red-200 truncate">Sikandar Ali</p>
-                      <p className="text-[10px] text-red-400 font-mono">⚠️ Frozen Account Demo</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
 
               <div className="text-center pt-2">
                 <p className="text-xs text-zinc-400">

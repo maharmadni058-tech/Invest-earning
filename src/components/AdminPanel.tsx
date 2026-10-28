@@ -132,10 +132,10 @@ export const AdminPanel: React.FC = () => {
         <button
           onClick={resetAllDemoData}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-mono transition-colors self-start md:self-auto"
-          title="Reset sample data"
+          title="Clear all stored data"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          <span>Reset Demo Data</span>
+          <span>Clear Platform Data</span>
         </button>
       </div>
 
@@ -306,93 +306,105 @@ export const AdminPanel: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/60 font-mono">
-                  {filteredUsers.map((u) => {
-                    const isFrozen = u.status === 'frozen';
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center font-sans">
+                        <Users className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                        <p className="text-sm font-semibold text-zinc-300">No Users in Database</p>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          When real users register on the platform, their details and status will appear here.
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((u) => {
+                      const isFrozen = u.status === 'frozen';
 
-                    return (
-                      <tr key={u.id} className="hover:bg-zinc-800/30 transition-colors">
-                        <td className="py-3.5 px-4 font-sans">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={u.avatarUrl}
-                              alt={u.fullName}
-                              className="w-8 h-8 rounded-full object-cover border border-zinc-700 flex-shrink-0"
-                            />
-                            <div>
-                              <p className="text-white font-bold">{u.fullName}</p>
-                              <p className="text-xs text-zinc-400 font-mono">{u.phone}</p>
-                              <p className="text-[10px] text-zinc-500 font-mono">{u.email}</p>
+                      return (
+                        <tr key={u.id} className="hover:bg-zinc-800/30 transition-colors">
+                          <td className="py-3.5 px-4 font-sans">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={u.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'}
+                                alt={u.fullName}
+                                className="w-8 h-8 rounded-full object-cover border border-zinc-700 flex-shrink-0"
+                              />
+                              <div>
+                                <p className="text-white font-bold">{u.fullName}</p>
+                                <p className="text-xs text-zinc-400 font-mono">{u.phone}</p>
+                                <p className="text-[10px] text-zinc-500 font-mono">{u.email}</p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td className="py-3.5 px-4">
-                          <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase">
-                            {u.currentPlanId ? u.currentPlanId.toUpperCase() : 'NO PLAN'}
-                          </span>
-                        </td>
-
-                        <td className="py-3.5 px-4 font-bold text-white text-sm">
-                          Rs {u.balancePKR.toLocaleString()}
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          {isFrozen ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-950 text-red-300 border border-red-700 text-[10px] font-bold uppercase">
-                              <Lock className="w-3 h-3" />
-                              FROZEN
+                          <td className="py-3.5 px-4">
+                            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase">
+                              {u.currentPlanId ? u.currentPlanId.toUpperCase() : 'NO PLAN'}
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 text-[10px] font-bold uppercase">
-                              <Unlock className="w-3 h-3" />
-                              ACTIVE
-                            </span>
-                          )}
-                          {isFrozen && u.freezeReason && (
-                            <p className="text-[10px] text-red-400 mt-1 max-w-[180px] truncate" title={u.freezeReason}>
-                              {u.freezeReason}
-                            </p>
-                          )}
-                        </td>
+                          </td>
 
-                        <td className="py-3.5 px-4 text-amber-300 font-semibold">
-                          {u.referralCode}
-                        </td>
+                          <td className="py-3.5 px-4 font-bold text-white text-sm">
+                            Rs {u.balancePKR.toLocaleString()}
+                          </td>
 
-                        <td className="py-3.5 px-4 text-right space-x-2">
-                          {/* Balance Adjust Button */}
-                          <button
-                            onClick={() => {
-                              setAdjustingUser(u);
-                              setAdjAmount(500);
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-sans transition-colors"
-                          >
-                            Adjust Balance
-                          </button>
+                          <td className="py-3.5 px-4">
+                            {isFrozen ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-950 text-red-300 border border-red-700 text-[10px] font-bold uppercase">
+                                <Lock className="w-3 h-3" />
+                                FROZEN
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 text-[10px] font-bold uppercase">
+                                <Unlock className="w-3 h-3" />
+                                ACTIVE
+                              </span>
+                            )}
+                            {isFrozen && u.freezeReason && (
+                              <p className="text-[10px] text-red-400 mt-1 max-w-[180px] truncate" title={u.freezeReason}>
+                                {u.freezeReason}
+                              </p>
+                            )}
+                          </td>
 
-                          {/* Freeze / Unfreeze Toggle */}
-                          {isFrozen ? (
-                            <button
-                              onClick={() => toggleUserStatus(u.id)}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-sans font-semibold transition-colors"
-                            >
-                              Activate
-                            </button>
-                          ) : (
+                          <td className="py-3.5 px-4 text-amber-300 font-semibold">
+                            {u.referralCode}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right space-x-2">
+                            {/* Balance Adjust Button */}
                             <button
                               onClick={() => {
-                                setFreezingUserId(u.id);
+                                setAdjustingUser(u);
+                                setAdjAmount(500);
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-sans font-semibold transition-colors"
+                              className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-sans transition-colors"
                             >
-                              Freeze User
+                              Adjust Balance
                             </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+
+                            {/* Freeze / Unfreeze Toggle */}
+                            {isFrozen ? (
+                              <button
+                                onClick={() => toggleUserStatus(u.id)}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-sans font-semibold transition-colors"
+                              >
+                                Activate
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setFreezingUserId(u.id);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-sans font-semibold transition-colors"
+                              >
+                                Freeze User
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

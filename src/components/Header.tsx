@@ -29,7 +29,6 @@ export const Header: React.FC<HeaderProps> = ({
   const {
     currentUser,
     users,
-    switchUser,
     isAdminMode,
     setIsAdminMode,
     paymentSettings,
@@ -259,45 +258,17 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                       </div>
 
-                      <div className="space-y-1 mb-2">
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-mono px-2 py-1">
-                          Switch Test Profile:
-                        </p>
-                        {users.map((u) => (
-                          <button
-                            key={u.id}
-                            onClick={() => {
-                              switchUser(u.id);
-                              setIsUserMenuOpen(false);
-                            }}
-                            className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-colors ${
-                              u.id === currentUser.id
-                                ? 'bg-amber-500/15 border border-amber-500/40'
-                                : 'hover:bg-zinc-800/60'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <img
-                                src={u.avatarUrl}
-                                alt={u.fullName}
-                                className="w-6 h-6 rounded-full object-cover border border-zinc-700"
-                              />
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold text-white truncate">{u.fullName}</p>
-                                <p className="text-[10px] text-zinc-400 font-mono truncate">{u.phone}</p>
-                              </div>
-                            </div>
-                            <span
-                              className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold uppercase ${
-                                u.status === 'frozen'
-                                  ? 'bg-rose-900/60 text-rose-300 border border-rose-600/40'
-                                  : 'bg-amber-950/60 text-amber-300 border border-amber-600/40'
-                              }`}
-                            >
-                              {u.status === 'frozen' ? 'FROZEN' : u.currentPlanId?.toUpperCase() || 'FREE'}
-                            </span>
-                          </button>
-                        ))}
+                      <div className="p-2 space-y-2 text-xs">
+                        <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                          <span>Referral Code:</span>
+                          <span className="font-bold text-amber-300">{currentUser.referralCode}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                          <span>Account Status:</span>
+                          <span className={`font-bold uppercase ${currentUser.status === 'frozen' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            {currentUser.status}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Logout Action */}

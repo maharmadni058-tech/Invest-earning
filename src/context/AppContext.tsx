@@ -98,13 +98,32 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  USERS: 'lte_gold_users_v1',
-  CURRENT_USER_ID: 'lte_gold_curr_uid_v1',
-  PAYMENTS: 'lte_gold_payments_v1',
-  TRANSACTIONS: 'lte_gold_txs_v1',
-  TASKS: 'lte_gold_tasks_v1',
-  ADMIN_MODE: 'lte_gold_admin_mode_v1',
-  ADMIN_AUTH: 'lte_gold_admin_auth_v1'
+  USERS: 'lte_gold_users_v2',
+  CURRENT_USER_ID: 'lte_gold_curr_uid_v2',
+  PAYMENTS: 'lte_gold_payments_v2',
+  TRANSACTIONS: 'lte_gold_txs_v2',
+  TASKS: 'lte_gold_tasks_v2',
+  ADMIN_MODE: 'lte_gold_admin_mode_v2',
+  ADMIN_AUTH: 'lte_gold_admin_auth_v2'
+};
+
+const GUEST_FALLBACK_USER: User = {
+  id: '',
+  fullName: 'Guest User',
+  phone: '',
+  email: '',
+  joinedDate: '',
+  currentPlanId: null,
+  planExpiryDate: null,
+  balancePKR: 0,
+  totalEarnedPKR: 0,
+  totalWithdrawnPKR: 0,
+  referralCode: 'GOLD-GUEST',
+  referredByCode: null,
+  referralEarningsPKR: 0,
+  status: 'active',
+  completedTasksToday: [],
+  lastTaskDate: ''
 };
 
 const ADMIN_CREDENTIALS = {
@@ -132,7 +151,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-    return saved || 'usr-1';
+    return saved || '';
   });
 
   const [paymentSettings, setPaymentSettings] = useState<PaymentGatewaySettings>(() => {
@@ -244,7 +263,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const isLoggedIn = Boolean(currentUserId && users.some((u) => u.id === currentUserId));
-  const currentUser = users.find((u) => u.id === currentUserId) || users[0];
+  const currentUser = users.find((u) => u.id === currentUserId) || GUEST_FALLBACK_USER;
 
   const openAuthModal = (tab: 'login' | 'register' = 'login') => {
     setAuthModalTab(tab);
@@ -1087,13 +1106,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetAllDemoData = () => {
     localStorage.clear();
-    setUsers(INITIAL_USERS);
-    setCurrentUserId('usr-1');
+    setUsers([]);
+    setCurrentUserId('');
     setPaymentSettings(INITIAL_PAYMENT_SETTINGS);
-    setTransactions(INITIAL_TRANSACTIONS);
+    setTransactions([]);
     setTasks(INITIAL_TASKS);
     setIsAdminModeState(false);
-    showToast('info', 'Data Reset', 'All demo state has been reset to defaults.');
+    showToast('info', 'System Cleared', 'All user records, balances, and transactions have been reset.');
   };
 
   return (
