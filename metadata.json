@@ -1,0 +1,6 @@
+{
+  "name": "Learn to Earn Gold",
+  "description": "Premium Dark & Gold Skill Academy and Learn-to-Earn Portal featuring membership tiers, daily verified skill tasks, 10% referral system, Pakistani (JazzCash, Easypaisa, Bank) & USDT payment gateways, and comprehensive Admin control panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
