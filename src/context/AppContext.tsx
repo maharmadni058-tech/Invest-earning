@@ -39,8 +39,26 @@ interface AppContextType {
   dismissToast: (id: string) => void;
   showToast: (type: ToastNotification['type'], title: string, message: string) => void;
   
+  // Auth & Session
+  isLoggedIn: boolean;
+  isAuthModalOpen: boolean;
+  authModalTab: 'login' | 'register';
+  openAuthModal: (tab?: 'login' | 'register') => void;
+  closeAuthModal: () => void;
+  login: (phoneOrEmail: string, password: string) => { success: boolean; message: string };
+  register: (payload: {
+    fullName: string;
+    phone: string;
+    email: string;
+    password: string;
+    referralCode?: string;
+  }) => { success: boolean; message: string };
+  logout: () => void;
+  loginWithDemo: (userId: string) => void;
+
   // User Actions
   switchUser: (userId: string) => void;
+  claimDailyProfit: () => { success: boolean; message: string; amount?: number };
   completeTask: (taskId: string, chosenOptionIndex: number) => { success: boolean; message: string; reward?: number };
   submitDeposit: (payload: {
     planId: PlanTier;
@@ -59,7 +77,13 @@ interface AppContextType {
   }) => { success: boolean; message: string };
   enrollPlanDirect: (planId: PlanTier) => { success: boolean; message: string };
 
-  // Admin Actions
+  // Admin Actions & Security
+  isAdminAuthenticated: boolean;
+  isAdminLoginModalOpen: boolean;
+  openAdminLoginModal: () => void;
+  closeAdminLoginModal: () => void;
+  adminLogin: (email: string, password: string) => { success: boolean; message: string };
+  adminLogout: () => void;
   toggleUserStatus: (userId: string, reason?: string) => void;
   adjustUserBalance: (userId: string, amountPKR: number, reason: string) => void;
   updatePaymentSettings: (newSettings: PaymentGatewaySettings) => void;
@@ -79,14 +103,27 @@ const STORAGE_KEYS = {
   PAYMENTS: 'lte_gold_payments_v1',
   TRANSACTIONS: 'lte_gold_txs_v1',
   TASKS: 'lte_gold_tasks_v1',
-  ADMIN_MODE: 'lte_gold_admin_mode_v1'
+  ADMIN_MODE: 'lte_gold_admin_mode_v1',
+  ADMIN_AUTH: 'lte_gold_admin_auth_v1'
+};
+
+const ADMIN_CREDENTIALS = {
+  email: 'maharmadni58@gmail.com',
+  password: 'MNB123@@$$&11'
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH);
+    return saved ? JSON.parse(saved) : false;
+  });
+
   const [isAdminMode, setIsAdminModeState] = useState<boolean>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_MODE);
     return saved ? JSON.parse(saved) : false;
   });
+
+  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState<boolean>(false);
 
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.USERS);
@@ -117,7 +154,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [plans] = useState<MembershipPlan[]>(MEMBERSHIP_PLANS);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
+  // Auth modal state
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login');
+
   // Sync state to local storage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, JSON.stringify(isAdminAuthenticated));
+  }, [isAdminAuthenticated]);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.ADMIN_MODE, JSON.stringify(isAdminMode));
   }, [isAdminMode]);
@@ -127,7 +172,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, currentUserId);
+    if (currentUserId) {
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, currentUserId);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+    }
   }, [currentUserId]);
 
   useEffect(() => {
@@ -154,12 +203,194 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const setIsAdminMode = (val: boolean) => {
-    setIsAdminModeState(val);
-    showToast('info', val ? 'Admin Mode Activated' : 'User Mode Activated', val ? 'You now have full control over users, payment numbers, and approvals.' : 'Switched back to user dashboard.');
+  const openAdminLoginModal = () => setIsAdminLoginModalOpen(true);
+  const closeAdminLoginModal = () => setIsAdminLoginModalOpen(false);
+
+  const adminLogin = (email: string, pass: string) => {
+    if (
+      email.trim().toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase() &&
+      pass === ADMIN_CREDENTIALS.password
+    ) {
+      setIsAdminAuthenticated(true);
+      setIsAdminModeState(true);
+      setIsAdminLoginModalOpen(false);
+      showToast('success', 'Admin Access Granted', 'Welcome Super Admin! Master control console unlocked.');
+      return { success: true, message: 'Admin authenticated' };
+    } else {
+      showToast('error', 'Access Denied', 'Invalid administrator email or password.');
+      return { success: false, message: 'Invalid admin credentials' };
+    }
   };
 
+  const adminLogout = () => {
+    setIsAdminAuthenticated(false);
+    setIsAdminModeState(false);
+    localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
+    localStorage.removeItem(STORAGE_KEYS.ADMIN_MODE);
+    showToast('info', 'Admin Session Ended', 'Admin console locked and hidden.');
+  };
+
+  const setIsAdminMode = (val: boolean) => {
+    if (val && !isAdminAuthenticated) {
+      openAdminLoginModal();
+      return;
+    }
+    setIsAdminModeState(val);
+    showToast(
+      'info',
+      val ? 'Admin Mode Activated' : 'User Mode Activated',
+      val ? 'You now have full control over users, payment numbers, and approvals.' : 'Switched back to user dashboard.'
+    );
+  };
+
+  const isLoggedIn = Boolean(currentUserId && users.some((u) => u.id === currentUserId));
   const currentUser = users.find((u) => u.id === currentUserId) || users[0];
+
+  const openAuthModal = (tab: 'login' | 'register' = 'login') => {
+    setAuthModalTab(tab);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
+  const login = (phoneOrEmail: string, password: string) => {
+    const cleanInput = phoneOrEmail.trim().toLowerCase();
+    const cleanDigits = phoneOrEmail.replace(/[^0-9]/g, '');
+
+    // Check if logging in as Super Admin
+    if (
+      cleanInput === ADMIN_CREDENTIALS.email.toLowerCase() &&
+      password === ADMIN_CREDENTIALS.password
+    ) {
+      setIsAdminAuthenticated(true);
+      setIsAdminModeState(true);
+      closeAuthModal();
+      showToast('success', 'Super Admin Authenticated', 'Welcome Super Admin! Admin console opened.');
+      return { success: true, message: 'Admin authenticated' };
+    }
+
+    const foundUser = users.find((u) => {
+      const emailMatch = u.email.toLowerCase() === cleanInput;
+      const userPhoneDigits = u.phone.replace(/[^0-9]/g, '');
+      const phoneMatch =
+        cleanDigits.length >= 7 &&
+        (userPhoneDigits.endsWith(cleanDigits.slice(-10)) || userPhoneDigits === cleanDigits);
+      return emailMatch || phoneMatch;
+    });
+
+    if (!foundUser) {
+      showToast('error', 'Account Not Found', 'No account exists with this phone number or email.');
+      return { success: false, message: 'Account not found' };
+    }
+
+    if (foundUser.password && foundUser.password !== password) {
+      showToast('error', 'Incorrect Password', 'The password entered does not match our records.');
+      return { success: false, message: 'Incorrect password' };
+    }
+
+    setCurrentUserId(foundUser.id);
+    closeAuthModal();
+    showToast('success', 'Logged In Successfully', `Welcome back, ${foundUser.fullName}!`);
+    return { success: true, message: 'Logged in successfully' };
+  };
+
+  const register = (payload: {
+    fullName: string;
+    phone: string;
+    email: string;
+    password: string;
+    referralCode?: string;
+  }) => {
+    const cleanPhone = payload.phone.trim();
+    const cleanDigits = cleanPhone.replace(/[^0-9]/g, '');
+    const cleanEmail = payload.email.trim().toLowerCase();
+
+    // Check duplicate phone
+    if (
+      users.some((u) => {
+        const uDigits = u.phone.replace(/[^0-9]/g, '');
+        return cleanDigits.length >= 7 && (uDigits.endsWith(cleanDigits.slice(-10)) || uDigits === cleanDigits);
+      })
+    ) {
+      showToast('error', 'Phone Already Registered', 'An account already exists with this phone number. Please login.');
+      return { success: false, message: 'Phone already registered' };
+    }
+
+    // Check duplicate email
+    if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
+      showToast('error', 'Email Already Registered', 'An account already exists with this email address.');
+      return { success: false, message: 'Email already registered' };
+    }
+
+    // Check sponsor referral code
+    let verifiedSponsorCode: string | null = null;
+    if (payload.referralCode && payload.referralCode.trim()) {
+      const sponsor = users.find(
+        (u) => u.referralCode.toLowerCase() === payload.referralCode!.trim().toLowerCase()
+      );
+      if (sponsor) {
+        verifiedSponsorCode = sponsor.referralCode;
+      } else {
+        showToast('warning', 'Referral Code Not Found', 'We created your account, but the sponsor code was invalid.');
+      }
+    }
+
+    const newId = `usr-${Date.now()}`;
+    const namePrefix = payload.fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase() || 'GOLD';
+    const genRefCode = `GOLD-${namePrefix}${Math.floor(100 + Math.random() * 900)}`;
+
+    const newUser: User = {
+      id: newId,
+      fullName: payload.fullName.trim(),
+      phone: cleanPhone,
+      email: cleanEmail,
+      password: payload.password,
+      avatarUrl: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80`,
+      joinedDate: new Date().toISOString().split('T')[0],
+      currentPlanId: null,
+      planExpiryDate: null,
+      balancePKR: 0,
+      totalEarnedPKR: 0,
+      totalWithdrawnPKR: 0,
+      referralCode: genRefCode,
+      referredByCode: verifiedSponsorCode,
+      referralEarningsPKR: 0,
+      status: 'active',
+      completedTasksToday: [],
+      lastTaskDate: new Date().toISOString().split('T')[0]
+    };
+
+    setUsers((prev) => [newUser, ...prev]);
+    setCurrentUserId(newId);
+    closeAuthModal();
+    showToast(
+      'success',
+      'Account Created Successfully!',
+      `Welcome to Learn to Earn Gold, ${newUser.fullName}!`
+    );
+    return { success: true, message: 'Registered successfully' };
+  };
+
+  const logout = () => {
+    setCurrentUserId('');
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+    showToast('info', 'Logged Out', 'You have been safely signed out.');
+  };
+
+  const loginWithDemo = (userId: string) => {
+    const target = users.find((u) => u.id === userId);
+    if (target) {
+      setCurrentUserId(userId);
+      closeAuthModal();
+      showToast(
+        'success',
+        'Demo Login Successful',
+        `Logged in as ${target.fullName} (${target.currentPlanId?.toUpperCase() || 'NO PLAN'})`
+      );
+    }
+  };
 
   const switchUser = (userId: string) => {
     setCurrentUserId(userId);
@@ -167,6 +398,75 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (target) {
       showToast('info', 'User Switched', `Now logged in as ${target.fullName} (${target.currentPlanId?.toUpperCase() || 'NO PLAN'})`);
     }
+  };
+
+  // Claim Daily Current Profit for Activated Payment Plan
+  const claimDailyProfit = () => {
+    if (currentUser.status === 'frozen') {
+      showToast('error', 'Account Frozen', 'Your account is currently frozen by administrator. Daily profit claims are locked.');
+      return { success: false, message: 'Account is frozen' };
+    }
+
+    if (!currentUser.currentPlanId) {
+      showToast('warning', 'No Active Payment Plan', 'Please activate a membership payment plan to claim daily profit.');
+      return { success: false, message: 'No active plan' };
+    }
+
+    const userPlan = plans.find((p) => p.id === currentUser.currentPlanId);
+    if (!userPlan) {
+      return { success: false, message: 'Plan configuration not found' };
+    }
+
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+
+    // Check if user already claimed today
+    const hasClaimedToday =
+      currentUser.lastTaskDate === dateStr &&
+      currentUser.completedTasksToday &&
+      currentUser.completedTasksToday.includes('daily_profit_claim');
+
+    if (hasClaimedToday) {
+      showToast('warning', 'Already Claimed Today', 'You have already claimed your daily profit for today. Next claim unlocks at 12:00 AM PKT.');
+      return { success: false, message: 'Daily profit already claimed for today' };
+    }
+
+    const dailyProfit = userPlan.dailyProfitPKR || userPlan.maxDailyEarnPKR || userPlan.rewardPerTaskPKR;
+
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === currentUser.id) {
+          return {
+            ...u,
+            balancePKR: u.balancePKR + dailyProfit,
+            totalEarnedPKR: u.totalEarnedPKR + dailyProfit,
+            completedTasksToday: ['daily_profit_claim'],
+            lastTaskDate: dateStr
+          };
+        }
+        return u;
+      })
+    );
+
+    const newTx: Transaction = {
+      id: `tx-profit-${Date.now()}`,
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      userPhone: currentUser.phone,
+      type: 'task_reward',
+      amountPKR: dailyProfit,
+      status: 'completed',
+      date: `${dateStr} ${now.toTimeString().substring(0, 5)}`,
+      notes: `Daily Current Profit Claim: ${userPlan.name} (+Rs ${dailyProfit.toLocaleString()})`
+    };
+
+    setTransactions((prev) => [newTx, ...prev]);
+    showToast(
+      'success',
+      'Daily Profit Claimed Successfully!',
+      `+Rs ${dailyProfit.toLocaleString()} daily profit credited to your Gold Wallet.`
+    );
+    return { success: true, message: 'Daily profit claimed', amount: dailyProfit };
   };
 
   // Complete a micro-task
@@ -378,37 +678,101 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    // Check if user has a referrer and credit 10% instant commission!
+    // Distribute 3-Level Multi-Tier Referral Commissions (Level 1: 10%, Level 2: 3%, Level 3: 1%)
     if (currentUser.referredByCode) {
-      const sponsor = users.find((u) => u.referralCode === currentUser.referredByCode);
-      if (sponsor) {
-        const commission = Math.round(plan.pricePKR * 0.10);
-        setUsers((prev) =>
-          prev.map((u) => {
-            if (u.id === sponsor.id) {
-              return {
-                ...u,
-                balancePKR: u.balancePKR + commission,
-                totalEarnedPKR: u.totalEarnedPKR + commission,
-                referralEarningsPKR: u.referralEarningsPKR + commission
-              };
-            }
-            return u;
-          })
-        );
+      const sponsor1 = users.find((u) => u.referralCode === currentUser.referredByCode);
+      if (sponsor1) {
+        const comm1 = Math.round(plan.pricePKR * 0.10);
+        let updatedUsersList = users.map((u) => {
+          if (u.id === sponsor1.id) {
+            return {
+              ...u,
+              balancePKR: u.balancePKR + comm1,
+              totalEarnedPKR: u.totalEarnedPKR + comm1,
+              referralEarningsPKR: u.referralEarningsPKR + comm1
+            };
+          }
+          return u;
+        });
 
-        const refTx: Transaction = {
-          id: `tx-ref-${Date.now()}`,
-          userId: sponsor.id,
-          userName: sponsor.fullName,
-          userPhone: sponsor.phone,
-          type: 'referral_bonus',
-          amountPKR: commission,
-          status: 'completed',
-          date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-          notes: `10% Direct Referral Commission from ${currentUser.fullName} purchasing ${plan.name}`
-        };
-        setTransactions((prev) => [refTx, ...prev]);
+        const newRefTxs: Transaction[] = [
+          {
+            id: `tx-ref-l1-${Date.now()}`,
+            userId: sponsor1.id,
+            userName: sponsor1.fullName,
+            userPhone: sponsor1.phone,
+            type: 'referral_bonus',
+            amountPKR: comm1,
+            status: 'completed',
+            date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+            notes: `Level 1 (10% Direct) Referral Commission from ${currentUser.fullName} purchasing ${plan.name}`
+          }
+        ];
+
+        // Level 2 (3% Commission)
+        if (sponsor1.referredByCode) {
+          const sponsor2 = updatedUsersList.find((u) => u.referralCode === sponsor1.referredByCode);
+          if (sponsor2) {
+            const comm2 = Math.round(plan.pricePKR * 0.03);
+            updatedUsersList = updatedUsersList.map((u) => {
+              if (u.id === sponsor2.id) {
+                return {
+                  ...u,
+                  balancePKR: u.balancePKR + comm2,
+                  totalEarnedPKR: u.totalEarnedPKR + comm2,
+                  level2ReferralEarningsPKR: (u.level2ReferralEarningsPKR || 0) + comm2
+                };
+              }
+              return u;
+            });
+
+            newRefTxs.push({
+              id: `tx-ref-l2-${Date.now()}`,
+              userId: sponsor2.id,
+              userName: sponsor2.fullName,
+              userPhone: sponsor2.phone,
+              type: 'referral_bonus',
+              amountPKR: comm2,
+              status: 'completed',
+              date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+              notes: `Level 2 (3% Team) Referral Commission from ${currentUser.fullName} (via ${sponsor1.fullName}) purchasing ${plan.name}`
+            });
+
+            // Level 3 (1% Commission)
+            if (sponsor2.referredByCode) {
+              const sponsor3 = updatedUsersList.find((u) => u.referralCode === sponsor2.referredByCode);
+              if (sponsor3) {
+                const comm3 = Math.round(plan.pricePKR * 0.01);
+                updatedUsersList = updatedUsersList.map((u) => {
+                  if (u.id === sponsor3.id) {
+                    return {
+                      ...u,
+                      balancePKR: u.balancePKR + comm3,
+                      totalEarnedPKR: u.totalEarnedPKR + comm3,
+                      level3ReferralEarningsPKR: (u.level3ReferralEarningsPKR || 0) + comm3
+                    };
+                  }
+                  return u;
+                });
+
+                newRefTxs.push({
+                  id: `tx-ref-l3-${Date.now()}`,
+                  userId: sponsor3.id,
+                  userName: sponsor3.fullName,
+                  userPhone: sponsor3.phone,
+                  type: 'referral_bonus',
+                  amountPKR: comm3,
+                  status: 'completed',
+                  date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                  notes: `Level 3 (1% Network) Referral Commission from ${currentUser.fullName} (via ${sponsor2.fullName}) purchasing ${plan.name}`
+                });
+              }
+            }
+          }
+        }
+
+        setUsers(updatedUsersList);
+        setTransactions((prev) => [...newRefTxs, ...prev]);
       }
     }
 
@@ -511,37 +875,108 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         })
       );
 
-      // Check 10% referral commission for sponsor
-      if (userToUpgrade.referredByCode) {
-        const sponsor = users.find((u) => u.referralCode === userToUpgrade.referredByCode);
-        if (sponsor && plan) {
-          const commission = Math.round(plan.pricePKR * 0.10);
-          setUsers((prev) =>
-            prev.map((u) => {
-              if (u.id === sponsor.id) {
-                return {
-                  ...u,
-                  balancePKR: u.balancePKR + commission,
-                  totalEarnedPKR: u.totalEarnedPKR + commission,
-                  referralEarningsPKR: u.referralEarningsPKR + commission
-                };
-              }
-              return u;
-            })
-          );
+      // Distribute 3-Level Multi-Tier Referral Commissions (Level 1: 10%, Level 2: 3%, Level 3: 1%)
+      if (userToUpgrade.referredByCode && plan) {
+        const sponsor1 = users.find((u) => u.referralCode === userToUpgrade.referredByCode);
+        if (sponsor1) {
+          const comm1 = Math.round(plan.pricePKR * 0.10);
+          let updatedUsersList = users.map((u) => {
+            if (u.id === userToUpgrade.id) {
+              return {
+                ...u,
+                currentPlanId: tx.planId || u.currentPlanId,
+                planExpiryDate: expiryStr
+              };
+            }
+            if (u.id === sponsor1.id) {
+              return {
+                ...u,
+                balancePKR: u.balancePKR + comm1,
+                totalEarnedPKR: u.totalEarnedPKR + comm1,
+                referralEarningsPKR: u.referralEarningsPKR + comm1
+              };
+            }
+            return u;
+          });
 
-          const refTx: Transaction = {
-            id: `tx-ref-comm-${Date.now()}`,
-            userId: sponsor.id,
-            userName: sponsor.fullName,
-            userPhone: sponsor.phone,
-            type: 'referral_bonus',
-            amountPKR: commission,
-            status: 'completed',
-            date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-            notes: `10% Direct Referral Commission from ${userToUpgrade.fullName} approved enrollment (${plan.name})`
-          };
-          setTransactions((prev) => [refTx, ...prev]);
+          const newRefTxs: Transaction[] = [
+            {
+              id: `tx-ref-comm-l1-${Date.now()}`,
+              userId: sponsor1.id,
+              userName: sponsor1.fullName,
+              userPhone: sponsor1.phone,
+              type: 'referral_bonus',
+              amountPKR: comm1,
+              status: 'completed',
+              date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+              notes: `Level 1 (10% Direct) Referral Commission from ${userToUpgrade.fullName} approved enrollment (${plan.name})`
+            }
+          ];
+
+          // Level 2 (3% Commission)
+          if (sponsor1.referredByCode) {
+            const sponsor2 = updatedUsersList.find((u) => u.referralCode === sponsor1.referredByCode);
+            if (sponsor2) {
+              const comm2 = Math.round(plan.pricePKR * 0.03);
+              updatedUsersList = updatedUsersList.map((u) => {
+                if (u.id === sponsor2.id) {
+                  return {
+                    ...u,
+                    balancePKR: u.balancePKR + comm2,
+                    totalEarnedPKR: u.totalEarnedPKR + comm2,
+                    level2ReferralEarningsPKR: (u.level2ReferralEarningsPKR || 0) + comm2
+                  };
+                }
+                return u;
+              });
+
+              newRefTxs.push({
+                id: `tx-ref-comm-l2-${Date.now()}`,
+                userId: sponsor2.id,
+                userName: sponsor2.fullName,
+                userPhone: sponsor2.phone,
+                type: 'referral_bonus',
+                amountPKR: comm2,
+                status: 'completed',
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                notes: `Level 2 (3% Team) Referral Commission from ${userToUpgrade.fullName} (via ${sponsor1.fullName}) approved enrollment (${plan.name})`
+              });
+
+              // Level 3 (1% Commission)
+              if (sponsor2.referredByCode) {
+                const sponsor3 = updatedUsersList.find((u) => u.referralCode === sponsor2.referredByCode);
+                if (sponsor3) {
+                  const comm3 = Math.round(plan.pricePKR * 0.01);
+                  updatedUsersList = updatedUsersList.map((u) => {
+                    if (u.id === sponsor3.id) {
+                      return {
+                        ...u,
+                        balancePKR: u.balancePKR + comm3,
+                        totalEarnedPKR: u.totalEarnedPKR + comm3,
+                        level3ReferralEarningsPKR: (u.level3ReferralEarningsPKR || 0) + comm3
+                      };
+                    }
+                    return u;
+                  });
+
+                  newRefTxs.push({
+                    id: `tx-ref-comm-l3-${Date.now()}`,
+                    userId: sponsor3.id,
+                    userName: sponsor3.fullName,
+                    userPhone: sponsor3.phone,
+                    type: 'referral_bonus',
+                    amountPKR: comm3,
+                    status: 'completed',
+                    date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                    notes: `Level 3 (1% Network) Referral Commission from ${userToUpgrade.fullName} (via ${sponsor2.fullName}) approved enrollment (${plan.name})`
+                  });
+                }
+              }
+            }
+          }
+
+          setUsers(updatedUsersList);
+          setTransactions((prev) => [...newRefTxs, ...prev]);
         }
       }
     }
@@ -666,6 +1101,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         isAdminMode,
         setIsAdminMode,
+        isAdminAuthenticated,
+        isAdminLoginModalOpen,
+        openAdminLoginModal,
+        closeAdminLoginModal,
+        adminLogin,
+        adminLogout,
         currentUser,
         users,
         plans,
@@ -676,7 +1117,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toasts,
         dismissToast,
         showToast,
+        isLoggedIn,
+        isAuthModalOpen,
+        authModalTab,
+        openAuthModal,
+        closeAuthModal,
+        login,
+        register,
+        logout,
+        loginWithDemo,
         switchUser,
+        claimDailyProfit,
         completeTask,
         submitDeposit,
         submitWithdrawal,

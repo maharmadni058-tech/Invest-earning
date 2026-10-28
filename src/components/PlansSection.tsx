@@ -19,10 +19,16 @@ interface PlansSectionProps {
 }
 
 export const PlansSection: React.FC<PlansSectionProps> = ({ onSelectPlanForDeposit }) => {
-  const { plans, currentUser, enrollPlanDirect, paymentSettings } = useApp();
+  const { plans, currentUser, enrollPlanDirect, paymentSettings, isLoggedIn, openAuthModal, showToast } = useApp();
   const [selectedPlanDetails, setSelectedPlanDetails] = useState<MembershipPlan | null>(null);
 
   const handleEnroll = (plan: MembershipPlan) => {
+    if (!isLoggedIn) {
+      showToast('info', 'Login Required', `Please login or register to enroll in ${plan.name}.`);
+      openAuthModal('register');
+      return;
+    }
+
     // If user has enough balance in their wallet, offer direct enrollment or deposit
     if (currentUser.balancePKR >= plan.pricePKR) {
       const confirmDirect = window.confirm(
@@ -135,19 +141,17 @@ export const PlansSection: React.FC<PlansSectionProps> = ({ onSelectPlanForDepos
                   </p>
                 </div>
 
-                {/* Micro-Tasks & Daily Rewards Metric */}
-                <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                  <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800">
-                    <span className="text-[10px] text-zinc-400 block font-mono">Daily Tasks</span>
-                    <span className="font-bold text-amber-300 font-mono">
-                      {plan.dailyTasksCount} / day
+                {/* Daily Current Profit Highlight Box */}
+                <div className="mt-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-zinc-400 font-mono uppercase">Daily Current Profit:</span>
+                    <span className="text-sm font-extrabold text-amber-300 font-mono">
+                      Rs {(plan.dailyProfitPKR || plan.maxDailyEarnPKR).toLocaleString()} / day
                     </span>
                   </div>
-                  <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800">
-                    <span className="text-[10px] text-zinc-400 block font-mono">Task Reward</span>
-                    <span className="font-bold text-emerald-400 font-mono">
-                      Rs {plan.rewardPerTaskPKR} each
-                    </span>
+                  <div className="flex items-center justify-between mt-1 text-[10px] text-emerald-400 font-mono">
+                    <span>1-Click Daily Claim</span>
+                    <span>Direct Wallet Payout</span>
                   </div>
                 </div>
 

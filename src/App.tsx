@@ -16,6 +16,8 @@ import { TransactionHistoryView } from './components/TransactionHistoryView';
 import { AdminPanel } from './components/AdminPanel';
 import { DepositModal } from './components/DepositModal';
 import { WithdrawModal } from './components/WithdrawModal';
+import { AuthModal } from './components/AuthModal';
+import { AdminLoginModal } from './components/AdminLoginModal';
 import { ToastContainer } from './components/ToastContainer';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
@@ -96,6 +98,12 @@ function MainAppContent() {
         isOpen={isWithdrawOpen}
         onClose={() => setIsWithdrawOpen(false)}
       />
+
+      {/* User Login & Register Modal */}
+      <AuthModal />
+
+      {/* Secret Admin Authentication Modal */}
+      <AdminLoginModal />
 
       {/* Floating Toast Notification Container */}
       <ToastContainer />

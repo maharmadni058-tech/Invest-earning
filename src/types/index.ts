@@ -16,6 +16,7 @@ export interface MembershipPlan {
   pricePKR: number;
   durationDays: number;
   dailyTasksCount: number;
+  dailyProfitPKR: number;
   rewardPerTaskPKR: number;
   maxDailyEarnPKR: number;
   courseTitle: string;
@@ -41,10 +42,13 @@ export interface User {
   referralCode: string;
   referredByCode: string | null;
   referralEarningsPKR: number;
+  level2ReferralEarningsPKR?: number;
+  level3ReferralEarningsPKR?: number;
   status: UserStatus;
   freezeReason?: string;
   completedTasksToday: string[];
   lastTaskDate: string;
+  password?: string;
 }
 
 export type PaymentMethod = 'jazzcash' | 'easypaisa' | 'bank' | 'usdt';

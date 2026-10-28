@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { paymentSettings, setIsAdminMode, isAdminMode } = useApp();
+  const { paymentSettings, isAdminMode, openAdminLoginModal, adminLogout } = useApp();
 
   return (
     <footer className="mt-16 border-t border-zinc-850 bg-[#07080b] text-zinc-400 text-xs">
@@ -87,11 +87,18 @@ export const Footer: React.FC = () => {
           <p>© 2026 Learn to Earn Gold Academy Pvt Ltd. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsAdminMode(!isAdminMode)}
-              className="text-amber-400/80 hover:text-amber-300 font-mono flex items-center gap-1 transition-colors"
+              onClick={() => {
+                if (isAdminMode) {
+                  adminLogout();
+                } else {
+                  openAdminLoginModal();
+                }
+              }}
+              className="text-zinc-600 hover:text-amber-400 font-mono flex items-center gap-1 transition-colors text-[10px]"
+              title="Administrator Authentication"
             >
-              <Lock className="w-3 h-3" />
-              <span>{isAdminMode ? 'Exit Admin Mode' : 'Admin Access Portal'}</span>
+              <Lock className="w-2.5 h-2.5" />
+              <span>{isAdminMode ? 'Exit Admin' : 'Staff Access'}</span>
             </button>
             <span>•</span>
             <span className="text-zinc-600">Privacy &amp; Terms</span>

@@ -12,6 +12,7 @@ import {
   BookOpen,
   Award,
   Sparkles,
+  Zap,
   ExternalLink
 } from 'lucide-react';
 
@@ -26,8 +27,46 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onOpenWithdraw,
   setActiveTab
 }) => {
-  const { currentUser, plans, paymentSettings, tasks, showToast } = useApp();
+  const { currentUser, plans, paymentSettings, tasks, showToast, isLoggedIn, openAuthModal } = useApp();
   const [copied, setCopied] = useState(false);
+
+  if (!isLoggedIn) {
+    return (
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#191b26] via-[#12141e] to-[#0c0d14] border border-amber-500/35 p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+        <div className="space-y-3 max-w-xl text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-[11px] font-bold uppercase">
+              Official Academy Portal
+            </span>
+            <span className="text-zinc-600">•</span>
+            <span className="text-emerald-400 text-xs font-mono">100% SECP &amp; Legal</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-display">
+            MASTER REAL DIGITAL SKILLS &amp; EARN DAILY CASH REWARDS
+          </h2>
+          <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+            Sign in or create your student account to unlock certified courses, complete daily practical skill verification tasks, and earn 10% direct sponsor commissions.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-shrink-0">
+          <button
+            onClick={() => openAuthModal('login')}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs uppercase tracking-wider transition-colors"
+          >
+            Sign In / لاگ ان
+          </button>
+          <button
+            onClick={() => openAuthModal('register')}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+          >
+            <Sparkles className="w-4 h-4 fill-black" />
+            <span>Register / نیا اکاؤنٹ</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const currentPlan = plans.find((p) => p.id === currentUser.currentPlanId);
   const dailyTasksCount = currentPlan?.dailyTasksCount || 3;
@@ -128,15 +167,19 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
               <div className="col-span-2 sm:col-span-1">
                 <p className="text-[11px] text-zinc-400 uppercase tracking-wider font-mono">
-                  10% Referral Bonus
+                  3-Tier Referral Bonus
                 </p>
                 <div className="flex items-baseline gap-1 mt-1">
                   <span className="text-xl sm:text-2xl font-bold text-amber-400 font-mono-numbers">
-                    Rs {currentUser.referralEarningsPKR.toLocaleString()}
+                    Rs {(
+                      (currentUser.referralEarningsPKR || 0) +
+                      (currentUser.level2ReferralEarningsPKR || 0) +
+                      (currentUser.level3ReferralEarningsPKR || 0)
+                    ).toLocaleString()}
                   </span>
                 </div>
                 <p className="text-xs text-zinc-400 font-mono mt-0.5">
-                  Direct network payouts
+                  L1 (10%) + L2 (3%) + L3 (1%)
                 </p>
               </div>
             </div>
@@ -170,7 +213,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
 
-        {/* Daily Tasks & Quick Status Card */}
+        {/* Daily Current Profit & Plan Claim Card */}
         <div className="rounded-2xl bg-[#12141c] p-6 border border-zinc-800 flex flex-col justify-between space-y-5">
           <div>
             <div className="flex items-center justify-between">
@@ -180,42 +223,38 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider font-display">
-                    Today's Tasks
+                    Daily Current Profit
                   </h3>
-                  <p className="text-xs text-zinc-400">Skill verification &amp; rewards</p>
+                  <p className="text-xs text-zinc-400">Payment plan daily reward</p>
                 </div>
               </div>
-              <span className="text-xs font-mono font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                {completedTodayCount} / {dailyTasksCount}
+              <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${
+                currentUser.completedTasksToday?.includes('daily_profit_claim')
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                  : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+              }`}>
+                {currentUser.completedTasksToday?.includes('daily_profit_claim') ? 'Claimed Today' : 'Ready'}
               </span>
             </div>
 
-            {/* Progress Bar */}
-            <div className="mt-4 space-y-1.5">
-              <div className="flex items-center justify-between text-xs text-zinc-400">
-                <span>Completion Status</span>
-                <span className="font-mono text-amber-300">{taskProgressPct}%</span>
-              </div>
-              <div className="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden p-0.5">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300 transition-all duration-500"
-                  style={{ width: `${taskProgressPct}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Quick Task Info */}
-            <div className="mt-4 p-3 rounded-xl bg-[#0b0c10] border border-zinc-800/80 text-xs text-zinc-300 space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Task Reward Rate:</span>
-                <span className="font-semibold text-amber-300 font-mono">
-                  Rs {currentPlan?.rewardPerTaskPKR || 15} / task
+            {/* Daily Profit Rate Highlight Box */}
+            <div className="mt-4 p-4 rounded-xl bg-[#0b0c10] border border-amber-500/20 text-xs space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Activated Plan:</span>
+                <span className="font-bold text-white uppercase font-mono">
+                  {currentPlan ? currentPlan.name : 'No Active Plan'}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Max Daily Potential:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Current Daily Profit:</span>
+                <span className="text-base font-extrabold text-amber-300 font-mono">
+                  Rs {(currentPlan ? (currentPlan.dailyProfitPKR || currentPlan.maxDailyEarnPKR) : 0).toLocaleString()} / day
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-zinc-800/60">
+                <span className="text-zinc-400">Claim Cycle:</span>
                 <span className="font-semibold text-emerald-400 font-mono">
-                  Rs {currentPlan?.maxDailyEarnPKR || 45} / day
+                  Every 24 Hours (12:00 AM)
                 </span>
               </div>
             </div>
@@ -224,17 +263,21 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           <div className="space-y-2">
             <button
               onClick={() => setActiveTab('tasks')}
-              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/15 transition-transform active:scale-98"
+              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-transform active:scale-98"
             >
-              <CheckCircle className="w-4 h-4" />
-              Complete Tasks &amp; Earn
+              <Zap className="w-4 h-4 fill-black" />
+              <span>
+                {currentUser.completedTasksToday?.includes('daily_profit_claim')
+                  ? 'View Claimed Profit'
+                  : `Claim Daily Profit (Rs ${(currentPlan ? (currentPlan.dailyProfitPKR || currentPlan.maxDailyEarnPKR) : 46).toLocaleString()})`}
+              </span>
             </button>
             <button
-              onClick={() => setActiveTab('courses')}
+              onClick={() => setActiveTab('plans')}
               className="w-full py-2 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium text-xs flex items-center justify-center gap-2 transition-colors"
             >
-              <BookOpen className="w-4 h-4 text-amber-400" />
-              Access Enrolled Courses
+              <Crown className="w-4 h-4 text-amber-400" />
+              <span>Explore Higher Profit Plans</span>
             </button>
           </div>
         </div>

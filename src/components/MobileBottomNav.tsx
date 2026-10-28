@@ -20,7 +20,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   setActiveTab,
   onOpenDeposit
 }) => {
-  const { isAdminMode } = useApp();
+  const { isAdminMode, isLoggedIn, openAuthModal } = useApp();
 
   if (isAdminMode) return null;
 
@@ -46,11 +46,20 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <span>Tasks</span>
       </button>
 
+      {/* Center Action */}
       <button
-        onClick={onOpenDeposit}
+        onClick={() => {
+          if (!isLoggedIn) {
+            openAuthModal('register');
+          } else {
+            onOpenDeposit();
+          }
+        }}
         className="flex flex-col items-center justify-center -mt-4 w-11 h-11 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-black shadow-lg shadow-amber-500/30 active:scale-95 transition-transform"
       >
-        <span className="text-[10px] font-black uppercase">PAY</span>
+        <span className="text-[10px] font-black uppercase">
+          {isLoggedIn ? 'PAY' : 'JOIN'}
+        </span>
       </button>
 
       <button

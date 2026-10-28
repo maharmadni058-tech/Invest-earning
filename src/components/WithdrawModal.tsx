@@ -18,7 +18,7 @@ interface WithdrawModalProps {
 }
 
 export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, paymentSettings, submitWithdrawal, showToast } = useApp();
+  const { currentUser, paymentSettings, submitWithdrawal, showToast, isLoggedIn, openAuthModal } = useApp();
 
   const [method, setMethod] = useState<PaymentMethod>('jazzcash');
   const [recipientAccount, setRecipientAccount] = useState(currentUser.phone || '');
@@ -40,6 +40,13 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isLoggedIn) {
+      showToast('warning', 'Login Required', 'Please sign in to request withdrawals.');
+      onClose();
+      openAuthModal('login');
+      return;
+    }
 
     if (isFrozen) {
       showToast('error', 'Account Frozen', 'Your account is under compliance review. Withdrawals are disabled.');

@@ -26,7 +26,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   onClose,
   defaultPlanId
 }) => {
-  const { paymentSettings, plans, submitDeposit, showToast } = useApp();
+  const { paymentSettings, plans, submitDeposit, showToast, isLoggedIn, openAuthModal } = useApp();
 
   const [selectedPlanId, setSelectedPlanId] = useState<PlanTier>(defaultPlanId || 'gold');
   const [method, setMethod] = useState<PaymentMethod>('jazzcash');
@@ -52,6 +52,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isLoggedIn) {
+      showToast('warning', 'Login Required', 'Please sign in or register to submit deposit payment receipts.');
+      onClose();
+      openAuthModal('login');
+      return;
+    }
 
     if (!senderAccount.trim()) {
       showToast('error', 'Missing Information', 'Please enter your sender mobile / account number.');

@@ -927,50 +927,81 @@ export const AdminPanel: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 6: TASK REWARDS & CONTENT MANAGEMENT */}
+      {/* TAB 6: TASK REWARDS & DAILY PROFIT MANAGEMENT */}
       {activeAdminTab === 'tasks' && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
             <div>
               <h2 className="text-base font-bold text-white font-display">
-                DAILY TASK REWARD CONFIGURATION
+                DAILY CURRENT PROFIT &amp; TASK CONFIGURATION
               </h2>
               <p className="text-xs text-zinc-400">
-                Adjust cash reward amounts paid to students when they pass skill comprehension checks.
+                Review and manage daily current profit payouts for each activated payment plan.
               </p>
             </div>
           </div>
 
-          <div className="space-y-3">
-            {tasks.map((task) => (
+          {/* Plan Daily Profit Rates Table */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {plans.map((plan) => (
               <div
-                key={task.id}
-                className="p-4 rounded-xl bg-[#12141e] border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                key={plan.id}
+                className="p-4 rounded-xl bg-[#12141e] border border-amber-500/20 flex flex-col justify-between space-y-2"
               >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px] font-mono uppercase">
-                      {task.requiredPlan.toUpperCase()} TIER
-                    </span>
-                    <span className="text-zinc-600">•</span>
-                    <span className="text-xs text-amber-400 font-semibold">{task.category}</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-white mt-1">{task.title}</h4>
-                  <p className="text-xs text-zinc-400 line-clamp-1 mt-0.5">{task.learningSnippet}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                    {plan.badge}
+                  </span>
+                  <span className="text-[11px] text-zinc-400 font-mono">
+                    Fee: Rs {plan.pricePKR.toLocaleString()}
+                  </span>
                 </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-center">
-                  <span className="text-xs text-zinc-400 font-mono">Reward:</span>
-                  <input
-                    type="number"
-                    value={task.rewardPKR}
-                    onChange={(e) => updateTaskReward(task.id, Number(e.target.value))}
-                    className="w-24 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs font-mono font-bold text-emerald-400 text-center focus:outline-none focus:border-amber-400"
-                  />
-                  <span className="text-xs font-mono text-zinc-400">PKR</span>
+                <div className="p-2.5 rounded-lg bg-[#0b0c10] border border-zinc-800 flex items-center justify-between">
+                  <span className="text-xs text-zinc-400 font-mono">Daily Current Profit:</span>
+                  <span className="text-sm font-extrabold text-amber-300 font-mono">
+                    Rs {(plan.dailyProfitPKR || plan.maxDailyEarnPKR).toLocaleString()} / day
+                  </span>
                 </div>
+                <p className="text-[11px] text-zinc-400 line-clamp-1">{plan.courseTitle}</p>
               </div>
             ))}
+          </div>
+
+          <div className="pt-2">
+            <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono mb-2">
+              Valid Learning Task Rewards (Individual Tasks)
+            </h3>
+            <div className="space-y-3">
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="p-4 rounded-xl bg-[#12141e] border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px] font-mono uppercase">
+                        {task.requiredPlan.toUpperCase()} TIER
+                      </span>
+                      <span className="text-zinc-600">•</span>
+                      <span className="text-xs text-amber-400 font-semibold">{task.category}</span>
+                    </div>
+                    <h4 className="text-sm font-bold text-white mt-1">{task.title}</h4>
+                    <p className="text-xs text-zinc-400 line-clamp-1 mt-0.5">{task.learningSnippet}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <span className="text-xs text-zinc-400 font-mono">Reward:</span>
+                    <input
+                      type="number"
+                      value={task.rewardPKR}
+                      onChange={(e) => updateTaskReward(task.id, Number(e.target.value))}
+                      className="w-24 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs font-mono font-bold text-emerald-400 text-center focus:outline-none focus:border-amber-400"
+                    />
+                    <span className="text-xs font-mono text-zinc-400">PKR</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
