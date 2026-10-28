@@ -160,9 +160,9 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
 
 export const INITIAL_PAYMENT_SETTINGS: PaymentGatewaySettings = {
   jazzcash: {
-    accountNumber: '03041234567',
-    accountTitle: 'EduGold Academy Official',
-    instructions: 'Open JazzCash app or dial *786# -> Send Money -> To JazzCash -> Enter 03041234567 -> Enter exact amount -> Save receipt & enter TID.',
+    accountNumber: '03087348367',
+    accountTitle: 'TASLEEM BIBI',
+    instructions: 'Open JazzCash app or dial *786# -> Send Money -> To JazzCash -> Enter 03087348367 (TASLEEM BIBI) -> Enter exact amount -> Save receipt & enter TID.',
     isEnabled: true
   },
   easypaisa: {
