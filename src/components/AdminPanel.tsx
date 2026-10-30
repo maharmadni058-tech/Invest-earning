@@ -25,7 +25,11 @@ import {
   Clock,
   Eye,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Sliders,
+  Crown,
+  Plus,
+  Minus
 } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
@@ -37,6 +41,7 @@ export const AdminPanel: React.FC = () => {
     plans,
     toggleUserStatus,
     adjustUserBalance,
+    assignUserPlan,
     updatePaymentSettings,
     approveDeposit,
     rejectDeposit,
@@ -68,7 +73,7 @@ export const AdminPanel: React.FC = () => {
   };
 
   const [activeAdminTab, setActiveAdminTab] = useState<
-    'overview' | 'users' | 'gateways' | 'deposits' | 'withdrawals' | 'tasks'
+    'overview' | 'users' | 'gateways' | 'deposits' | 'withdrawals' | 'tasks' | 'portal-security'
   >('overview');
 
   // Search in user management
@@ -80,6 +85,9 @@ export const AdminPanel: React.FC = () => {
   const [adjAmount, setAdjAmount] = useState<number>(500);
   const [adjReason, setAdjReason] = useState<string>('Bonus reward for exceptional performance');
 
+  // Plan Assignment Modal State
+  const [planModalUser, setPlanModalUser] = useState<User | null>(null);
+
   // Freeze user custom reason state
   const [freezingUserId, setFreezingUserId] = useState<string | null>(null);
   const [freezeReasonText, setFreezeReasonText] = useState('Suspicious activity / Duplicate payment slip submitted');
@@ -87,10 +95,34 @@ export const AdminPanel: React.FC = () => {
   // Live editable payment settings form state
   const [gatewayForm, setGatewayForm] = useState<PaymentGatewaySettings>(paymentSettings);
 
+  // Keep form synced when paymentSettings updates from server
+  useEffect(() => {
+    setGatewayForm(paymentSettings);
+  }, [paymentSettings]);
+
   // Sync gatewayForm when paymentSettings updates
   const handleSaveGateways = (e: React.FormEvent) => {
     e.preventDefault();
     updatePaymentSettings(gatewayForm);
+  };
+
+  const portalSettings = gatewayForm?.adminPortalSettings || {
+    footerButtonMode: 'button',
+    footerButtonLabel: 'Staff / Admin Access',
+    showInHeader: true
+  };
+
+  const handleUpdatePortalSettings = (partial: Partial<typeof portalSettings>) => {
+    const updated: PaymentGatewaySettings = {
+      ...gatewayForm,
+      adminPortalSettings: {
+        ...portalSettings,
+        ...partial
+      }
+    };
+    setGatewayForm(updated);
+    updatePaymentSettings(updated);
+    showToast('success', 'Admin Portal Settings Saved', 'Footer button and portal visibility updated instantly.');
   };
 
   // Pending items counts
@@ -178,6 +210,7 @@ export const AdminPanel: React.FC = () => {
           { id: 'overview', label: 'Financial Overview', icon: DollarSign, badge: null },
           { id: 'users', label: 'User Control & Freeze', icon: Users, badge: frozenUsersCount > 0 ? `${frozenUsersCount} Frozen` : null },
           { id: 'gateways', label: 'Edit Payment Numbers', icon: CreditCard, badge: 'Live Config' },
+          { id: 'portal-security', label: 'Admin Hide & Footer Button', icon: Sliders, badge: 'Customize' },
           { id: 'deposits', label: 'Deposit Review', icon: ArrowDownToLine, badge: pendingDeposits.length > 0 ? pendingDeposits.length : null },
           { id: 'withdrawals', label: 'Withdrawal Approvals', icon: ArrowUpFromLine, badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : null },
           { id: 'tasks', label: 'Edit Tasks & Rewards', icon: BookOpen, badge: null }
@@ -324,8 +357,131 @@ export const AdminPanel: React.FC = () => {
             </div>
           </div>
 
-          {/* Users Table */}
-          <div className="rounded-2xl bg-[#12141e] border border-zinc-800 overflow-hidden">
+          {/* Mobile User Cards Layout (Screen < md) */}
+          <div className="block md:hidden space-y-3">
+            {filteredUsers.length === 0 ? (
+              <div className="p-8 text-center rounded-2xl bg-[#12141e] border border-zinc-800">
+                <Users className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-zinc-300">No Users in Database</p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Registered members will appear here.
+                </p>
+              </div>
+            ) : (
+              filteredUsers.map((u) => {
+                const isFrozen = u.status === 'frozen';
+                return (
+                  <div
+                    key={u.id}
+                    className="p-4 rounded-2xl bg-[#12141e] border border-zinc-800 space-y-3 shadow-md"
+                  >
+                    {/* Header: Avatar, Name, Email, Status */}
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={u.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'}
+                          alt={u.fullName}
+                          className="w-10 h-10 rounded-full object-cover border border-amber-500/40 flex-shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-white font-bold text-sm truncate">{u.fullName}</p>
+                          <p className="text-xs text-zinc-400 font-mono">{u.phone}</p>
+                          <p className="text-[10px] text-zinc-500 font-mono truncate">{u.email}</p>
+                        </div>
+                      </div>
+
+                      {/* Status badge */}
+                      {isFrozen ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-950 text-red-300 border border-red-700 text-[10px] font-bold uppercase shrink-0">
+                          <Lock className="w-3 h-3" />
+                          FROZEN
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 text-[10px] font-bold uppercase shrink-0">
+                          <Unlock className="w-3 h-3" />
+                          ACTIVE
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Balance, Plan, and Referral Code Grid */}
+                    <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-[#0b0c10] border border-zinc-800/80 font-mono text-xs">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase block">Wallet Balance</span>
+                        <span className="text-sm font-bold text-amber-300">
+                          Rs {u.balancePKR.toLocaleString()}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase block">Plan Tier</span>
+                        <span className="text-xs font-bold text-white uppercase flex items-center gap-1">
+                          {u.currentPlanId ? (
+                            <>
+                              <Crown className="w-3 h-3 text-amber-400" />
+                              <span>{u.currentPlanId}</span>
+                            </>
+                          ) : (
+                            <span className="text-zinc-500">Free Member</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isFrozen && u.freezeReason && (
+                      <p className="text-[11px] text-red-300 p-2 rounded-xl bg-red-950/40 border border-red-900/50 leading-relaxed font-mono">
+                        <strong className="text-red-400">Freeze Reason:</strong> {u.freezeReason}
+                      </p>
+                    )}
+
+                    {/* Touch-Friendly Action Buttons for Mobile Screen */}
+                    <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                      <button
+                        onClick={() => {
+                          setAdjustingUser(u);
+                          setAdjAmount(500);
+                        }}
+                        className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Adjust Balance</span>
+                      </button>
+
+                      <button
+                        onClick={() => setPlanModalUser(u)}
+                        className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/40 text-purple-300 font-bold active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Crown className="w-3.5 h-3.5" />
+                        <span>Change Tier</span>
+                      </button>
+
+                      <div className="col-span-2">
+                        {isFrozen ? (
+                          <button
+                            onClick={() => toggleUserStatus(u.id)}
+                            className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all cursor-pointer active:scale-95"
+                          >
+                            <Unlock className="w-3.5 h-3.5" />
+                            <span>Unfreeze &amp; Activate User</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setFreezingUserId(u.id)}
+                            className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-zinc-800 hover:bg-red-950/60 text-zinc-300 hover:text-red-300 border border-zinc-700 hover:border-red-500/50 transition-all cursor-pointer active:scale-95"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-red-400" />
+                            <span>Freeze Account</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table (Shown on md+ screens) */}
+          <div className="hidden md:block rounded-2xl bg-[#12141e] border border-zinc-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#0b0c10] text-zinc-400 font-mono uppercase text-[10px] border-b border-zinc-800">
@@ -371,9 +527,13 @@ export const AdminPanel: React.FC = () => {
                           </td>
 
                           <td className="py-3.5 px-4">
-                            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase">
+                            <button
+                              onClick={() => setPlanModalUser(u)}
+                              className="px-2 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                              title="Click to change plan"
+                            >
                               {u.currentPlanId ? u.currentPlanId.toUpperCase() : 'NO PLAN'}
-                            </span>
+                            </button>
                           </td>
 
                           <td className="py-3.5 px-4 font-bold text-white text-sm">
@@ -403,14 +563,22 @@ export const AdminPanel: React.FC = () => {
                             {u.referralCode}
                           </td>
 
-                          <td className="py-3.5 px-4 text-right space-x-2">
+                          <td className="py-3.5 px-4 text-right space-x-1.5">
+                            {/* Plan Assign Button */}
+                            <button
+                              onClick={() => setPlanModalUser(u)}
+                              className="px-2.5 py-1 rounded-lg bg-purple-950/50 hover:bg-purple-900/60 border border-purple-500/30 text-purple-300 text-xs font-sans transition-colors cursor-pointer"
+                            >
+                              Tier
+                            </button>
+
                             {/* Balance Adjust Button */}
                             <button
                               onClick={() => {
                                 setAdjustingUser(u);
                                 setAdjAmount(500);
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-sans transition-colors"
+                              className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-sans transition-colors cursor-pointer"
                             >
                               Adjust Balance
                             </button>
@@ -419,7 +587,7 @@ export const AdminPanel: React.FC = () => {
                             {isFrozen ? (
                               <button
                                 onClick={() => toggleUserStatus(u.id)}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-sans font-semibold transition-colors"
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-sans font-semibold transition-colors cursor-pointer"
                               >
                                 Activate
                               </button>
@@ -428,7 +596,7 @@ export const AdminPanel: React.FC = () => {
                                 onClick={() => {
                                   setFreezingUserId(u.id);
                                 }}
-                                className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-sans font-semibold transition-colors"
+                                className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-sans font-semibold transition-colors cursor-pointer"
                               >
                                 Freeze User
                               </button>
@@ -489,20 +657,45 @@ export const AdminPanel: React.FC = () => {
       {/* Balance Adjust Modal */}
       {adjustingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-[#13151f] border border-amber-500/50 shadow-2xl space-y-4">
+          <div className="w-full max-w-md p-5 sm:p-6 rounded-2xl bg-[#13151f] border border-amber-500/50 shadow-2xl space-y-4">
             <div className="flex items-center gap-2.5 text-amber-400">
               <Edit3 className="w-5 h-5" />
               <h3 className="text-base font-bold text-white font-display">
                 Adjust Wallet Balance: {adjustingUser.fullName}
               </h3>
             </div>
-            <p className="text-xs text-zinc-300">
-              Current Balance: <strong className="text-amber-300 font-mono">Rs {adjustingUser.balancePKR}</strong>
-            </p>
+
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[#0b0c10] border border-zinc-800 text-xs font-mono">
+              <span className="text-zinc-400">Current Balance:</span>
+              <strong className="text-amber-300 font-bold text-sm">Rs {adjustingUser.balancePKR.toLocaleString()}</strong>
+            </div>
+
+            {/* Quick Adjustment Chips for Mobile Users */}
+            <div>
+              <span className="text-[11px] text-zinc-400 font-mono block mb-1.5">
+                Quick PKR Adjustment Chips (Tap to Set):
+              </span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[500, 1000, 2500, 5000, 10000, -500].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setAdjAmount(amt)}
+                    className={`py-2 px-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer active:scale-95 ${
+                      adjAmount === amt
+                        ? 'bg-amber-400 text-black shadow-md shadow-amber-400/20'
+                        : 'bg-zinc-850 hover:bg-zinc-750 text-zinc-300 border border-zinc-750'
+                    }`}
+                  >
+                    {amt > 0 ? `+Rs ${amt.toLocaleString()}` : `-Rs ${Math.abs(amt).toLocaleString()}`}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div>
-              <label className="text-xs text-zinc-400 block mb-1">
-                Amount to Adjust in PKR (Positive to Credit, Negative to Debit)
+              <label className="text-xs text-zinc-400 block mb-1 font-mono">
+                Custom Amount in PKR (+ Credit, - Debit):
               </label>
               <input
                 type="number"
@@ -512,20 +705,32 @@ export const AdminPanel: React.FC = () => {
               />
             </div>
 
+            {/* Projected Balance Calculation */}
+            <div className="p-3 rounded-xl bg-[#0e1017] border border-zinc-800 flex items-center justify-between font-mono text-xs">
+              <span className="text-zinc-400">Projected Balance:</span>
+              <span className={`font-bold text-sm ${
+                (adjustingUser.balancePKR + adjAmount) < adjustingUser.balancePKR
+                  ? 'text-rose-400'
+                  : 'text-emerald-400'
+              }`}>
+                Rs {Math.max(0, adjustingUser.balancePKR + adjAmount).toLocaleString()}
+              </span>
+            </div>
+
             <div>
-              <label className="text-xs text-zinc-400 block mb-1">Audit Reason / Note</label>
+              <label className="text-xs text-zinc-400 block mb-1 font-mono">Audit Reason / Note:</label>
               <input
                 type="text"
                 value={adjReason}
                 onChange={(e) => setAdjReason(e.target.value)}
-                className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none focus:border-amber-400"
+                className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
               />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setAdjustingUser(null)}
-                className="px-3.5 py-1.5 rounded-xl bg-zinc-800 text-zinc-300 text-xs hover:bg-zinc-700"
+                className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 text-xs hover:bg-zinc-700 font-mono transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -534,9 +739,85 @@ export const AdminPanel: React.FC = () => {
                   adjustUserBalance(adjustingUser.id, adjAmount, adjReason);
                   setAdjustingUser(null);
                 }}
-                className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs"
+                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs font-mono transition-all cursor-pointer shadow-md shadow-amber-500/20 active:scale-95"
               >
                 Apply Adjustment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Plan Assignment Modal for Direct Tier Adjustment */}
+      {planModalUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md p-5 sm:p-6 rounded-2xl bg-[#13151f] border border-purple-500/50 shadow-2xl space-y-4">
+            <div className="flex items-center gap-2.5 text-purple-400">
+              <Crown className="w-5 h-5" />
+              <div>
+                <h3 className="text-base font-bold text-white font-display">
+                  Assign Membership Tier
+                </h3>
+                <p className="text-xs text-zinc-400 font-mono">
+                  Target User: <strong className="text-white">{planModalUser.fullName}</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+              {/* Option to clear plan */}
+              <button
+                onClick={() => {
+                  assignUserPlan(planModalUser.id, null);
+                  setPlanModalUser(null);
+                }}
+                className={`w-full p-3 rounded-xl border text-left flex items-center justify-between text-xs font-mono transition-all cursor-pointer ${
+                  !planModalUser.currentPlanId
+                    ? 'bg-zinc-800/80 border-zinc-500 text-white'
+                    : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-850'
+                }`}
+              >
+                <span>No Plan (Free Member)</span>
+                {!planModalUser.currentPlanId && <span className="text-[10px] text-amber-400 font-bold">CURRENT</span>}
+              </button>
+
+              {plans.map((p) => {
+                const isSelected = planModalUser.currentPlanId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      assignUserPlan(planModalUser.id, p.id);
+                      setPlanModalUser(null);
+                    }}
+                    className={`w-full p-3 rounded-xl border text-left flex items-center justify-between text-xs font-mono transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-purple-950/50 border-purple-400 text-white shadow-md'
+                        : 'bg-[#0f111a] border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div>
+                      <span className="font-bold block text-white">{p.name}</span>
+                      <span className="text-[11px] text-zinc-400">
+                        Rs {p.pricePKR.toLocaleString()} • Profit: Rs {(p.dailyProfitPKR || p.maxDailyEarnPKR).toLocaleString()}/day
+                      </span>
+                    </div>
+                    {isSelected && (
+                      <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold">
+                        CURRENT
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setPlanModalUser(null)}
+                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-mono transition-colors cursor-pointer"
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -1046,6 +1327,239 @@ export const AdminPanel: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: PORTAL HIDE & FOOTER BUTTON SETTINGS */}
+      {activeAdminTab === 'portal-security' && (
+        <div className="space-y-6">
+          <div className="p-5 sm:p-6 rounded-2xl bg-[#11131c] border border-zinc-800 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-zinc-800 gap-3">
+              <div className="flex items-center gap-3 text-red-400">
+                <div className="w-10 h-10 rounded-xl bg-red-950/50 border border-red-500/40 flex items-center justify-center">
+                  <Sliders className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white font-display tracking-wide flex items-center gap-2">
+                    <span>ADMIN PANEL HIDE &amp; FOOTER BUTTON SETTINGS</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-red-600/20 text-red-400 font-mono border border-red-500/30">
+                      LIVE CONFIG
+                    </span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Customize whether the admin entry point is visible, discreet/hidden, or removed from the footer.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Visibility Mode Selector */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-zinc-200 font-mono uppercase tracking-wider block">
+                Choose Footer Admin Button Mode:
+              </label>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Mode 1: Visible Footer Button */}
+                <div
+                  onClick={() => handleUpdatePortalSettings({ footerButtonMode: 'button' })}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                    portalSettings.footerButtonMode === 'button'
+                      ? 'bg-red-950/40 border-red-500 shadow-lg shadow-red-950/40 ring-1 ring-red-500/50'
+                      : 'bg-[#141622] border-zinc-800 hover:border-zinc-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      1. Visible Footer Button
+                    </span>
+                    {portalSettings.footerButtonMode === 'button' ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold">
+                        ACTIVE
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-zinc-500 font-mono">Click to Select</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Adds a dedicated button in the footer bottom next to Privacy &amp; Terms. Clicking it opens the manual email &amp; password admin login modal.
+                  </p>
+                </div>
+
+                {/* Mode 2: Stealth / Discreet Trigger */}
+                <div
+                  onClick={() => handleUpdatePortalSettings({ footerButtonMode: 'discreet' })}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                    portalSettings.footerButtonMode === 'discreet'
+                      ? 'bg-red-950/40 border-red-500 shadow-lg shadow-red-950/40 ring-1 ring-red-500/50'
+                      : 'bg-[#141622] border-zinc-800 hover:border-zinc-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                      <Lock className="w-4 h-4 text-amber-400" />
+                      2. Stealth / Discreet
+                    </span>
+                    {portalSettings.footerButtonMode === 'discreet' ? (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-mono font-bold">
+                        ACTIVE
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-zinc-500 font-mono">Click to Select</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Hides a subtle lock touchpoint inside the copyright line. Invisible to regular visitors; clicking it opens the manual email &amp; password login.
+                  </p>
+                </div>
+
+                {/* Mode 3: Completely Hidden */}
+                <div
+                  onClick={() => handleUpdatePortalSettings({ footerButtonMode: 'hidden' })}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                    portalSettings.footerButtonMode === 'hidden'
+                      ? 'bg-red-950/40 border-red-500 shadow-lg shadow-red-950/40 ring-1 ring-red-500/50'
+                      : 'bg-[#141622] border-zinc-800 hover:border-zinc-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                      <Eye className="w-4 h-4 text-zinc-400" />
+                      3. Completely Hidden
+                    </span>
+                    {portalSettings.footerButtonMode === 'hidden' ? (
+                      <span className="px-2 py-0.5 rounded-full bg-zinc-500/20 text-zinc-300 text-[10px] font-mono font-bold">
+                        ACTIVE
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-zinc-500 font-mono">Click to Select</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Removes all admin buttons from the footer entirely. Admin logs in exclusively through the top header or the sign-in modal.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Customize Button Label (Shown when in 'button' mode) */}
+            {portalSettings.footerButtonMode === 'button' && (
+              <div className="p-4 rounded-xl bg-[#0e1017] border border-zinc-800 space-y-2">
+                <label className="text-xs font-bold text-zinc-300 font-mono block">
+                  Customize Footer Button Label:
+                </label>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <input
+                    type="text"
+                    value={portalSettings.footerButtonLabel}
+                    onChange={(e) =>
+                      setGatewayForm({
+                        ...gatewayForm,
+                        adminPortalSettings: {
+                          ...portalSettings,
+                          footerButtonLabel: e.target.value
+                        }
+                      })
+                    }
+                    placeholder="e.g. Staff / Admin Access"
+                    className="flex-1 p-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white font-mono focus:outline-none focus:border-red-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleUpdatePortalSettings({
+                        footerButtonLabel: gatewayForm.adminPortalSettings?.footerButtonLabel || 'Staff / Admin Access'
+                      })
+                    }
+                    className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs font-mono transition-colors cursor-pointer"
+                  >
+                    Save Custom Label
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5 pt-1 text-[11px] text-zinc-500 font-mono">
+                  <span>Quick suggestions:</span>
+                  {['Staff / Admin Access', 'Administrator Portal', 'System Console', 'Staff Login'].map((label) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => handleUpdatePortalSettings({ footerButtonLabel: label })}
+                      className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Header Admin Button Visibility Toggle */}
+            <div className="p-4 rounded-xl bg-[#0e1017] border border-zinc-800 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold text-white font-mono flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-amber-400" />
+                  <span>Show "Admin" Button in Top Header</span>
+                </p>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  Display the red Admin button in the navigation header bar when logged out.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleUpdatePortalSettings({ showInHeader: !portalSettings.showInHeader })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                  portalSettings.showInHeader ? 'bg-emerald-500' : 'bg-zinc-700'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    portalSettings.showInHeader ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Live Interactive Footer Preview Box */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-400 font-mono uppercase tracking-wider block">
+                Live Preview of Website Footer Bottom:
+              </label>
+              <div className="p-4 rounded-xl bg-[#07080b] border border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 font-mono">
+                <div className="flex items-center gap-1.5">
+                  <span>© 2026 Learn to Earn Gold Academy Pvt Ltd. All rights reserved.</span>
+                  {portalSettings.footerButtonMode === 'discreet' && (
+                    <span className="inline-flex items-center text-amber-400/80 bg-amber-400/10 px-1 py-0.5 rounded text-[10px]" title="Discreet lock visible only on hover">
+                      <Lock className="w-2.5 h-2.5 mr-0.5" /> [Secret Trigger]
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-zinc-600">Privacy &amp; Terms</span>
+                  {portalSettings.footerButtonMode === 'button' && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#10121a] text-zinc-300 border border-red-500/40 text-[11px] font-mono shadow-sm">
+                      <ShieldCheck className="w-3 h-3 text-red-400" />
+                      <span>{portalSettings.footerButtonLabel || 'Staff / Admin Access'}</span>
+                    </span>
+                  )}
+                  {portalSettings.footerButtonMode === 'hidden' && (
+                    <span className="text-[10px] text-zinc-600 italic">(Button Hidden from Footer)</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Security Notice */}
+            <div className="p-4 rounded-xl bg-red-950/20 border border-red-500/30 text-xs text-red-200/90 space-y-1.5 font-mono">
+              <div className="flex items-center gap-2 text-white font-bold">
+                <ShieldCheck className="w-4 h-4 text-red-400" />
+                <span>Security &amp; Manual Login Notice</span>
+              </div>
+              <p className="text-[11px] text-zinc-300 leading-relaxed">
+                Clicking the footer button in any mode prompts for manual email (<code className="text-amber-300">maharmadni058@gmail.com</code> / <code className="text-amber-300">maharmadni58@gmail.com</code>) and password (<code className="text-amber-300">MNB123@@$$&amp;11</code>).
+                All attempts are safeguarded by the 5-attempt rate-limiting shield and 15-minute lockout cooldown.
+              </p>
             </div>
           </div>
         </div>

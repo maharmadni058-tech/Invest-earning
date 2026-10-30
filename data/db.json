@@ -7,9 +7,9 @@
       "email": "maharmadni58@gmail.com",
       "joinedDate": "2026-01-01",
       "currentPlanId": "royal",
-      "planExpiryDate": "2030-12-31",
-      "balancePKR": 15000,
-      "totalEarnedPKR": 20000,
+      "planExpiryDate": "2027-04-28",
+      "balancePKR": 15500,
+      "totalEarnedPKR": 20500,
       "totalWithdrawnPKR": 0,
       "referralCode": "GOLD-ADMIN",
       "referredByCode": null,
@@ -70,9 +70,39 @@
       "referralCode": "GOLD-8899",
       "status": "active",
       "password": "Password123@"
+    },
+    {
+      "id": "user-1793266194684-349",
+      "fullName": "Mahar Madni",
+      "phone": "03473162324",
+      "email": "maharmadni028@gmail.com",
+      "joinedDate": "2026-10-29",
+      "currentPlanId": null,
+      "planExpiryDate": null,
+      "balancePKR": 0,
+      "totalEarnedPKR": 0,
+      "totalWithdrawnPKR": 0,
+      "referralCode": "GOLD-9690",
+      "referredByCode": null,
+      "referralEarningsPKR": 0,
+      "status": "active",
+      "completedTasksToday": [],
+      "lastTaskDate": "",
+      "password": "123456"
     }
   ],
   "transactions": [
+    {
+      "id": "tx-adj-1793347820594",
+      "userId": "user-admin-master",
+      "userName": "Mahar Madni",
+      "userPhone": "03087348367",
+      "type": "admin_adjustment",
+      "amountPKR": 500,
+      "status": "completed",
+      "date": "2026-10-30 08:10",
+      "notes": "Admin adjustment: Mobile test adjustment"
+    },
     {
       "id": "tx-profit-1793265778792",
       "userId": "user-admin-master",
@@ -116,7 +146,12 @@
     },
     "minDepositPKR": 500,
     "minWithdrawPKR": 300,
-    "withdrawFeePercent": 0
+    "withdrawFeePercent": 0,
+    "adminPortalSettings": {
+      "footerButtonMode": "button",
+      "footerButtonLabel": "Staff / Admin Access",
+      "showInHeader": true
+    }
   },
   "tasks": [
     {

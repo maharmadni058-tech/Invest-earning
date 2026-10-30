@@ -3,15 +3,20 @@ import { useApp } from '../context/AppContext';
 import {
   Crown,
   ShieldCheck,
-  Lock,
   MessageCircle,
-  HelpCircle,
   Mail,
-  Award
+  Lock,
+  Sliders
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { paymentSettings, isAdminMode, isAdminAuthenticated, openAdminLoginModal, adminLogout } = useApp();
+  const { paymentSettings, openAdminLoginModal, isAdminAuthenticated, setIsAdminMode } = useApp();
+
+  const portalSettings = paymentSettings?.adminPortalSettings || {
+    footerButtonMode: 'button',
+    footerButtonLabel: 'Staff / Admin Access',
+    showInHeader: true
+  };
 
   return (
     <footer className="mt-16 border-t border-zinc-850 bg-[#07080b] text-zinc-400 text-xs">
@@ -82,39 +87,51 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom copyright and legal disclaimer */}
+        {/* Bottom copyright and legal disclaimer with customizable admin access */}
         <div className="pt-6 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-500">
-          <p>
-            <span
-              onClick={openAdminLoginModal}
-              className="cursor-default select-none"
-              title=""
-            >
-              ©
-            </span>{' '}
-            2026 Learn to Earn Gold Academy Pvt Ltd. All rights reserved.
-          </p>
-          <div className="flex items-center gap-4">
-            {isAdminAuthenticated && (
-              <>
-                <button
-                  onClick={() => {
-                    if (isAdminMode) {
-                      adminLogout();
-                    } else {
-                      openAdminLoginModal();
-                    }
-                  }}
-                  className="text-red-400 hover:text-red-300 font-mono flex items-center gap-1 transition-colors text-[10px] font-bold"
-                  title="Administrator Authentication"
-                >
-                  <Lock className="w-2.5 h-2.5" />
-                  <span>{isAdminMode ? 'Exit Admin' : 'Admin Panel'}</span>
-                </button>
-                <span>•</span>
-              </>
+          <div className="flex items-center gap-2">
+            <p>
+              © 2026 Learn to Earn Gold Academy Pvt Ltd. All rights reserved.
+            </p>
+            {/* Discreet stealth trigger if configured as 'discreet' */}
+            {portalSettings.footerButtonMode === 'discreet' && !isAdminAuthenticated && (
+              <button
+                onClick={openAdminLoginModal}
+                className="opacity-30 hover:opacity-100 text-zinc-400 hover:text-red-400 transition-opacity p-0.5 cursor-pointer ml-1"
+                title="Admin Security"
+                aria-label="Admin Security"
+              >
+                <Lock className="w-3 h-3" />
+              </button>
             )}
+          </div>
+
+          <div className="flex items-center gap-4">
             <span className="text-zinc-600">Privacy &amp; Terms</span>
+
+            {/* Custom Footer Admin Button (Visible Mode) */}
+            {portalSettings.footerButtonMode === 'button' && !isAdminAuthenticated && (
+              <button
+                onClick={openAdminLoginModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#10121a] hover:bg-[#181a26] text-zinc-300 hover:text-white border border-red-500/35 hover:border-red-500/60 text-xs font-mono transition-all cursor-pointer shadow-sm active:scale-95"
+                title="Administrator Console Login"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
+                <span>{portalSettings.footerButtonLabel || 'Staff / Admin Access'}</span>
+              </button>
+            )}
+
+            {/* If Admin is already authenticated, show quick switch button */}
+            {isAdminAuthenticated && (
+              <button
+                onClick={() => setIsAdminMode(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-500/40 text-xs font-mono font-bold transition-all cursor-pointer"
+                title="Switch to Admin Console"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
+                <span>Open Admin Panel</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

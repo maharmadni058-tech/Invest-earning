@@ -72,6 +72,15 @@ function initDb(): DatabaseSchema {
         changed = true;
       }
 
+      // Ensure adminPortalSettings is populated
+      if (!data.paymentSettings?.adminPortalSettings) {
+        data.paymentSettings = {
+          ...data.paymentSettings,
+          adminPortalSettings: INITIAL_PAYMENT_SETTINGS.adminPortalSettings
+        };
+        changed = true;
+      }
+
       // Ensure tasks are available
       if (!Array.isArray(data.tasks) || data.tasks.length === 0) {
         data.tasks = INITIAL_TASKS;
@@ -439,10 +448,57 @@ async function startServer() {
     }
   });
 
-  // 4. Admin Login
+  // Admin lockout and attempt tracking state
+  let adminFailedAttempts = 0;
+  let adminLockoutUntil = 0;
+  const MAX_ADMIN_ATTEMPTS = 5;
+  const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15-minute security cooldown
+
+  // 4a. Check Admin Security Status
+  app.get('/api/auth/admin-status', (req, res) => {
+    const now = Date.now();
+    const isLocked = now < adminLockoutUntil;
+    const lockoutSecondsRemaining = isLocked ? Math.ceil((adminLockoutUntil - now) / 1000) : 0;
+    const remainingAttempts = isLocked ? 0 : Math.max(0, MAX_ADMIN_ATTEMPTS - adminFailedAttempts);
+
+    return res.json({
+      locked: isLocked,
+      failedAttempts: adminFailedAttempts,
+      remainingAttempts,
+      lockoutSecondsRemaining,
+      maxAttempts: MAX_ADMIN_ATTEMPTS
+    });
+  });
+
+  // 4b. Admin Login with 5-attempt security lockout
   app.post('/api/auth/admin-login', (req, res) => {
     try {
-      const { email, password } = req.body;
+      const now = Date.now();
+
+      // Check if currently locked
+      if (now < adminLockoutUntil) {
+        const lockoutSecondsRemaining = Math.ceil((adminLockoutUntil - now) / 1000);
+        const mins = Math.floor(lockoutSecondsRemaining / 60);
+        const secs = lockoutSecondsRemaining % 60;
+        const timeFormatted = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+        return res.status(429).json({
+          success: false,
+          locked: true,
+          failedAttempts: adminFailedAttempts,
+          attemptsRemaining: 0,
+          lockoutSecondsRemaining,
+          message: `Admin portal locked due to 5 consecutive failed attempts. Try again in ${timeFormatted}.`
+        });
+      }
+
+      // If lockout duration has elapsed, reset counter
+      if (adminLockoutUntil > 0 && now >= adminLockoutUntil) {
+        adminFailedAttempts = 0;
+        adminLockoutUntil = 0;
+      }
+
+      const { email, password } = req.body || {};
       const cleanEmail = String(email || '').trim().toLowerCase();
       const cleanPass = String(password || '').trim();
 
@@ -451,12 +507,48 @@ async function startServer() {
         cleanPass === ADMIN_CREDENTIALS.password;
 
       if (isMatch) {
-        return res.json({ success: true, message: 'Admin authenticated' });
+        // Successful login: reset attempts and lockout completely
+        adminFailedAttempts = 0;
+        adminLockoutUntil = 0;
+        console.log(`[SECURITY] Super Admin authenticated successfully: ${cleanEmail}`);
+        return res.json({
+          success: true,
+          message: 'Super Admin authenticated successfully',
+          remainingAttempts: MAX_ADMIN_ATTEMPTS
+        });
       }
 
-      return res.status(401).json({ success: false, message: 'Invalid Admin Credentials' });
-    } catch {
-      return res.status(500).json({ success: false, message: 'Admin auth error' });
+      // Mismatch: increment failed attempt
+      adminFailedAttempts += 1;
+
+      if (adminFailedAttempts >= MAX_ADMIN_ATTEMPTS) {
+        adminLockoutUntil = now + LOCKOUT_DURATION_MS;
+        const lockoutSecondsRemaining = Math.ceil(LOCKOUT_DURATION_MS / 1000);
+        console.warn(`[SECURITY ALERT] 5 failed admin login attempts reached. 15-minute lockout triggered.`);
+
+        return res.status(429).json({
+          success: false,
+          locked: true,
+          failedAttempts: adminFailedAttempts,
+          attemptsRemaining: 0,
+          lockoutSecondsRemaining,
+          message: 'Maximum 5 attempts exceeded. Portal is now locked for 15 minutes.'
+        });
+      }
+
+      const remaining = MAX_ADMIN_ATTEMPTS - adminFailedAttempts;
+      console.warn(`[SECURITY] Failed admin login attempt #${adminFailedAttempts}. ${remaining} remaining.`);
+
+      return res.status(401).json({
+        success: false,
+        locked: false,
+        failedAttempts: adminFailedAttempts,
+        attemptsRemaining: remaining,
+        message: `Invalid administrator email or password. Attempt ${adminFailedAttempts} of ${MAX_ADMIN_ATTEMPTS} (${remaining} remaining).`
+      });
+    } catch (err: any) {
+      console.error('Admin login error:', err);
+      return res.status(500).json({ success: false, message: 'Admin authentication server error' });
     }
   });
 
@@ -620,6 +712,32 @@ async function startServer() {
     writeDb(db);
 
     return res.json({ success: true, user, transaction: tx });
+  });
+
+  // 8b. Admin: Assign / Update User Membership Plan
+  app.post('/api/admin/users/:id/plan', (req, res) => {
+    const { id } = req.params;
+    const { planId } = req.body;
+
+    const db = readDb();
+    const user = db.users.find((u) => u.id === id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.currentPlanId = planId || null;
+    if (planId) {
+      const plan = MEMBERSHIP_PLANS.find((p) => p.id === planId);
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + (plan ? plan.durationDays : 30));
+      user.planExpiryDate = expiry.toISOString().split('T')[0];
+    } else {
+      user.planExpiryDate = null;
+    }
+
+    writeDb(db);
+    return res.json({ success: true, user });
   });
 
   // 9. Admin: Approve Deposit

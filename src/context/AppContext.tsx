@@ -85,10 +85,17 @@ interface AppContextType {
   isAdminLoginModalOpen: boolean;
   openAdminLoginModal: () => void;
   closeAdminLoginModal: () => void;
-  adminLogin: (email: string, password: string) => { success: boolean; message: string };
+  adminLogin: (email: string, password: string) => Promise<{
+    success: boolean;
+    message: string;
+    remainingAttempts?: number;
+    locked?: boolean;
+    lockoutSecondsRemaining?: number;
+  }>;
   adminLogout: () => void;
   toggleUserStatus: (userId: string, reason?: string) => void;
   adjustUserBalance: (userId: string, amountPKR: number, reason: string) => void;
+  assignUserPlan: (userId: string, planId: PlanTier | null) => void;
   updatePaymentSettings: (newSettings: PaymentGatewaySettings) => void;
   approveDeposit: (transactionId: string) => void;
   rejectDeposit: (transactionId: string, reason: string) => void;
@@ -138,13 +145,21 @@ const ADMIN_CREDENTIALS = {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH);
-    return saved !== null ? JSON.parse(saved) : true;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH);
+      return saved === 'true';
+    } catch {
+      return false;
+    }
   });
 
   const [isAdminMode, setIsAdminModeState] = useState<boolean>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_MODE);
-    return saved !== null ? JSON.parse(saved) : true;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_MODE);
+      return saved === 'true';
+    } catch {
+      return false;
+    }
   });
 
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState<boolean>(false);
@@ -155,8 +170,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-    return saved || 'user-admin-master';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+      return saved || '';
+    } catch {
+      return '';
+    }
   });
 
   const [paymentSettings, setPaymentSettings] = useState<PaymentGatewaySettings>(() => {
@@ -295,22 +314,82 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   const closeAdminLoginModal = () => setIsAdminLoginModalOpen(false);
 
-  const adminLogin = (email: string, pass: string) => {
+  const adminLogin = async (
+    email: string,
+    pass: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    remainingAttempts?: number;
+    locked?: boolean;
+    lockoutSecondsRemaining?: number;
+  }> => {
     const cleanEmail = email.trim().toLowerCase();
-    const isMatch =
-      (ADMIN_CREDENTIALS.emails.includes(cleanEmail) || cleanEmail === ADMIN_CREDENTIALS.phone) &&
-      pass === ADMIN_CREDENTIALS.password;
+    const cleanPass = pass.trim();
 
-    if (isMatch) {
-      setIsAdminAuthenticated(true);
-      setIsAdminModeState(true);
-      setIsAdminLoginModalOpen(false);
-      showToast('success', 'Admin Access Granted', 'Welcome Super Admin! Master control console unlocked.');
-      syncWithServer();
-      return { success: true, message: 'Admin authenticated' };
-    } else {
-      showToast('error', 'Access Denied', 'Invalid administrator email or password.');
-      return { success: false, message: 'Invalid admin credentials' };
+    try {
+      const res = await fetch('/api/auth/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password: cleanPass })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsAdminAuthenticated(true);
+        setIsAdminModeState(true);
+        const adminUser = users.find(
+          (u) =>
+            u.email?.toLowerCase() === cleanEmail ||
+            ADMIN_CREDENTIALS.emails.includes(u.email?.toLowerCase() || '')
+        );
+        const targetAdminId = adminUser?.id || 'user-admin-master';
+        setCurrentUserId(targetAdminId);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, targetAdminId);
+        localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+        localStorage.setItem(STORAGE_KEYS.ADMIN_MODE, 'true');
+        setIsAdminLoginModalOpen(false);
+        showToast('success', 'Admin Access Granted', 'Welcome Super Admin! Master control console unlocked.');
+        await syncWithServer();
+        return { success: true, message: data.message || 'Admin authenticated' };
+      } else {
+        const errorMsg = data.message || 'Invalid administrator email or password.';
+        showToast('error', data.locked ? 'Security Lockout' : 'Access Denied', errorMsg);
+        return {
+          success: false,
+          message: errorMsg,
+          remainingAttempts: data.attemptsRemaining,
+          locked: data.locked,
+          lockoutSecondsRemaining: data.lockoutSecondsRemaining
+        };
+      }
+    } catch {
+      // Offline fallback: check credentials locally
+      const isMatch =
+        (ADMIN_CREDENTIALS.emails.includes(cleanEmail) || cleanEmail === ADMIN_CREDENTIALS.phone) &&
+        cleanPass === ADMIN_CREDENTIALS.password;
+
+      if (isMatch) {
+        setIsAdminAuthenticated(true);
+        setIsAdminModeState(true);
+        const adminUser = users.find(
+          (u) =>
+            u.email?.toLowerCase() === cleanEmail ||
+            ADMIN_CREDENTIALS.emails.includes(u.email?.toLowerCase() || '')
+        );
+        const targetAdminId = adminUser?.id || 'user-admin-master';
+        setCurrentUserId(targetAdminId);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, targetAdminId);
+        localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+        localStorage.setItem(STORAGE_KEYS.ADMIN_MODE, 'true');
+        setIsAdminLoginModalOpen(false);
+        showToast('success', 'Admin Access Granted', 'Welcome Super Admin!');
+        return { success: true, message: 'Admin authenticated' };
+      } else {
+        showToast('error', 'Access Denied', 'Invalid administrator email or password.');
+        return { success: false, message: 'Invalid admin credentials' };
+      }
     }
   };
 
@@ -1015,6 +1094,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .catch((err) => console.error('Failed to adjust balance on server:', err));
   };
 
+  const assignUserPlan = (userId: string, planId: PlanTier | null) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const plan = plans.find((p) => p.id === planId);
+          const expiry = new Date();
+          expiry.setDate(expiry.getDate() + (plan?.durationDays || 30));
+          return {
+            ...u,
+            currentPlanId: planId,
+            planExpiryDate: planId ? expiry.toISOString().split('T')[0] : null
+          };
+        }
+        return u;
+      })
+    );
+    showToast('success', 'User Plan Updated', `Plan changed to ${planId ? planId.toUpperCase() : 'Free Member'}`);
+
+    fetch(`/api/admin/users/${userId}/plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planId })
+    })
+      .then(() => syncWithServer())
+      .catch((err) => console.error('Failed to update user plan on server:', err));
+  };
+
   const updatePaymentSettings = (newSettings: PaymentGatewaySettings) => {
     setPaymentSettings(newSettings);
     showToast('success', 'Gateways Updated', 'Payment numbers, bank details and USDT exchange rates saved successfully.');
@@ -1357,6 +1463,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         enrollPlanDirect,
         toggleUserStatus,
         adjustUserBalance,
+        assignUserPlan,
         updatePaymentSettings,
         approveDeposit,
         rejectDeposit,

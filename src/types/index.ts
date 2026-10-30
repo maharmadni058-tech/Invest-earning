@@ -85,6 +85,11 @@ export interface PaymentGatewaySettings {
   minDepositPKR: number;
   minWithdrawPKR: number;
   withdrawFeePercent: number;
+  adminPortalSettings?: {
+    footerButtonMode: 'button' | 'discreet' | 'hidden';
+    footerButtonLabel: string;
+    showInHeader: boolean;
+  };
 }
 
 export type TransactionType = 'deposit' | 'withdraw' | 'task_reward' | 'referral_bonus' | 'plan_purchase' | 'admin_adjustment';

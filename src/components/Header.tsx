@@ -477,6 +477,18 @@ export const Header: React.FC<HeaderProps> = ({
             </>
           )}
 
+          {/* Admin Login Trigger (Customizable via Portal Settings) */}
+          {!isAdminAuthenticated && (paymentSettings?.adminPortalSettings?.showInHeader !== false) && (
+            <button
+              onClick={openAdminLoginModal}
+              className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 hover:text-white font-mono text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm shadow-red-950/40 active:scale-95 shrink-0"
+              title="Administrator Portal Login"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
+              <span>Admin</span>
+            </button>
+          )}
+
           {/* ADMIN ACTIVE CONSOLE CONTROL BUTTON */}
           {isAdminAuthenticated && (
             isAdminMode ? (

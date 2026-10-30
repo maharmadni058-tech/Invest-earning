@@ -370,7 +370,7 @@ export const AuthModal: React.FC = () => {
                 </button>
               </form>
 
-              <div className="text-center pt-2">
+              <div className="text-center pt-2 space-y-3">
                 <p className="text-xs text-zinc-400">
                   New to Learn to Earn Gold?{' '}
                   <button
@@ -384,6 +384,20 @@ export const AuthModal: React.FC = () => {
                     Register New Account
                   </button>
                 </p>
+
+                <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeAuthModal();
+                      openAdminLoginModal();
+                    }}
+                    className="text-[11px] font-mono text-zinc-400 hover:text-red-400 flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
+                    <span>Administrator Console Login</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}

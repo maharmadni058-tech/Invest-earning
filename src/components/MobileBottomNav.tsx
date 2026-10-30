@@ -5,8 +5,7 @@ import {
   Award,
   BookOpen,
   Share2,
-  Wallet,
-  ShieldCheck
+  Wallet
 } from 'lucide-react';
 
 interface MobileBottomNavProps {

@@ -189,7 +189,12 @@ export const INITIAL_PAYMENT_SETTINGS: PaymentGatewaySettings = {
   },
   minDepositPKR: 500,
   minWithdrawPKR: 300,
-  withdrawFeePercent: 0
+  withdrawFeePercent: 0,
+  adminPortalSettings: {
+    footerButtonMode: 'button',
+    footerButtonLabel: 'Staff / Admin Access',
+    showInHeader: true
+  }
 };
 
 export const INITIAL_TASKS: DailyTask[] = [
