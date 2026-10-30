@@ -448,7 +448,27 @@ export const INITIAL_COURSES: CourseModule[] = [
   }
 ];
 
-export const INITIAL_USERS: User[] = [];
+export const MASTER_ADMIN_USER: User = {
+  id: 'user-admin-master',
+  fullName: 'Mahar Madni',
+  phone: '03087348367',
+  email: 'maharmadni58@gmail.com',
+  joinedDate: '2026-01-01',
+  currentPlanId: 'royal',
+  planExpiryDate: '2030-12-31',
+  balancePKR: 10000,
+  totalEarnedPKR: 15000,
+  totalWithdrawnPKR: 0,
+  referralCode: 'GOLD-ADMIN',
+  referredByCode: null,
+  referralEarningsPKR: 0,
+  status: 'active',
+  completedTasksToday: [],
+  lastTaskDate: '',
+  password: 'MNB123@@$$&11'
+};
+
+export const INITIAL_USERS: User[] = [MASTER_ADMIN_USER];
 
 export const INITIAL_TRANSACTIONS: Transaction[] = [];
 

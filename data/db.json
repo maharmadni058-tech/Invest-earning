@@ -1,0 +1,304 @@
+{
+  "users": [
+    {
+      "id": "user-admin-master",
+      "fullName": "Mahar Madni",
+      "phone": "03087348367",
+      "email": "maharmadni58@gmail.com",
+      "joinedDate": "2026-01-01",
+      "currentPlanId": "royal",
+      "planExpiryDate": "2030-12-31",
+      "balancePKR": 15000,
+      "totalEarnedPKR": 20000,
+      "totalWithdrawnPKR": 0,
+      "referralCode": "GOLD-ADMIN",
+      "referredByCode": null,
+      "referralEarningsPKR": 0,
+      "status": "active",
+      "completedTasksToday": [
+        "daily_profit_claim"
+      ],
+      "lastTaskDate": "2026-10-29",
+      "password": "MNB123@@$$&11"
+    },
+    {
+      "id": "user-1793263489261-757",
+      "fullName": "Kamran Ali",
+      "phone": "03001234567",
+      "email": "kamran.test@example.com",
+      "joinedDate": "2026-10-29",
+      "currentPlanId": null,
+      "planExpiryDate": null,
+      "balancePKR": 0,
+      "totalEarnedPKR": 0,
+      "totalWithdrawnPKR": 0,
+      "referralCode": "GOLD-9647",
+      "referredByCode": null,
+      "referralEarningsPKR": 0,
+      "status": "active",
+      "completedTasksToday": [],
+      "lastTaskDate": "",
+      "password": "Password123"
+    },
+    {
+      "id": "user-1793265750203-303",
+      "fullName": "Tariq Mehmood",
+      "phone": "0321-7654321",
+      "email": "tariq@test.com",
+      "joinedDate": "2026-10-29",
+      "currentPlanId": null,
+      "planExpiryDate": null,
+      "balancePKR": 0,
+      "totalEarnedPKR": 0,
+      "totalWithdrawnPKR": 0,
+      "referralCode": "GOLD-9550",
+      "referredByCode": null,
+      "referralEarningsPKR": 0,
+      "status": "active",
+      "completedTasksToday": [],
+      "lastTaskDate": "",
+      "password": "UserPass123@"
+    },
+    {
+      "id": "user-client-device2",
+      "fullName": "Ali Raza Device2",
+      "phone": "03451122334",
+      "email": "aliraza@test.com",
+      "balancePKR": 500,
+      "totalEarnedPKR": 500,
+      "totalWithdrawnPKR": 0,
+      "referralCode": "GOLD-8899",
+      "status": "active",
+      "password": "Password123@"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-profit-1793265778792",
+      "userId": "user-admin-master",
+      "userName": "Mahar Madni",
+      "userPhone": "03087348367",
+      "type": "task_reward",
+      "amountPKR": 5000,
+      "status": "completed",
+      "date": "2026-10-29 09:22",
+      "notes": "Daily Current Profit Claim: Royal Elite Membership (+Rs 5,000)"
+    }
+  ],
+  "paymentSettings": {
+    "jazzcash": {
+      "accountNumber": "03087348367",
+      "accountTitle": "TASLEEM BIBI",
+      "instructions": "Open JazzCash app or dial *786# -> Send Money -> To JazzCash -> Enter 03087348367 (TASLEEM BIBI) -> Enter exact amount -> Save receipt & enter TID.",
+      "isEnabled": true
+    },
+    "easypaisa": {
+      "accountNumber": "03459876543",
+      "accountTitle": "EduGold Official Merchant",
+      "instructions": "Open Easypaisa app -> Send Money -> To Easypaisa Mobile Account -> Enter 03459876543 -> Enter exact amount -> Submit 11-digit Trx ID below.",
+      "isEnabled": true
+    },
+    "bank": {
+      "bankName": "Meezan Bank Ltd (Islamic Banking)",
+      "accountNumber": "01020304050607",
+      "iban": "PK45MEZN0001020304050607",
+      "accountTitle": "LEARN TO EARN GOLD PVT LTD",
+      "branchCode": "0102 (Clifton Karachi Branch)",
+      "instructions": "Transfer via any Pakistani Banking App (Raast / IBFT). Enter IBAN or Account Number. Take a screenshot of the receipt.",
+      "isEnabled": true
+    },
+    "usdt": {
+      "trc20Address": "TYw8eZ4pDqx729LnmBkqX99A1m23RstV8x",
+      "bep20Address": "0x71C...B289e49F1269bA4762395726B1",
+      "exchangeRatePKR": 280,
+      "instructions": "Send USDT (TRC-20 recommended for low network fees). Enter your Transaction Hash (TxID) after blockchain confirmation.",
+      "isEnabled": true
+    },
+    "minDepositPKR": 500,
+    "minWithdrawPKR": 300,
+    "withdrawFeePercent": 0
+  },
+  "tasks": [
+    {
+      "id": "task-1",
+      "title": "Digital Marketing: Ad Copy Hook Evaluation",
+      "category": "Marketing",
+      "requiredPlan": "bronze",
+      "rewardPKR": 15,
+      "estimatedMinutes": 2,
+      "learningSnippet": "A high-converting ad copy hook must grab immediate attention within the first 3 seconds and address a specific pain point rather than making vague promises.",
+      "practicalQuestion": "Which of the following ad headlines has the highest click-through conversion rate for Pakistani freelancers?",
+      "options": [
+        "\"Make millions without doing any work\"",
+        "\"Struggling to find Upwork clients? Here is how 3 students landed $500 orders this week\"",
+        "\"Click here now for best money secret\"",
+        "\"Freelancing is good\""
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Option 2 targets a real pain point (\"struggling to find Upwork clients\") with specific proof and relevance."
+    },
+    {
+      "id": "task-2",
+      "title": "Customer Service: Handling Refund Inquiries",
+      "category": "Freelancing",
+      "requiredPlan": "bronze",
+      "rewardPKR": 15,
+      "estimatedMinutes": 2,
+      "learningSnippet": "When a client asks for a modification, never respond aggressively. Empathize first, reconfirm the exact scope, and offer a clear revision path.",
+      "practicalQuestion": "What is the professional freelance response to an unsatisfied client revision request?",
+      "options": [
+        "\"Cancel the order immediately\"",
+        "\"I am sorry the initial draft did not hit the mark. Let me refine section 2 per your notes today\"",
+        "\"It is not my fault, you gave bad instructions\"",
+        "\"Pay extra $50 before I speak with you\""
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Professionalism and proactive resolution protect your 5-star rating on freelance marketplaces."
+    },
+    {
+      "id": "task-3",
+      "title": "Cybersecurity: Spotting Phishing & Fake Payment Slips",
+      "category": "Security",
+      "requiredPlan": "bronze",
+      "rewardPKR": 15,
+      "estimatedMinutes": 2,
+      "learningSnippet": "Authentic JazzCash and Easypaisa SMS confirmations always arrive from official sender codes (8558 for JazzCash, 3737 for Easypaisa), never from standard 11-digit personal phone numbers.",
+      "practicalQuestion": "You receive an SMS from 0300-1234567 claiming \"Rs 5,000 received via JazzCash\". Is this legitimate?",
+      "options": [
+        "Yes, it is 100% verified",
+        "No, official JazzCash alerts come exclusively from 8558; personal numbers indicate a fake SMS scam",
+        "It depends on the time of day",
+        "Call the sender and give them your MPIN"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Official SMS comes only from branded shortcodes (8558 / 3737). Never trust personal number SMS."
+    },
+    {
+      "id": "task-4",
+      "title": "Social Media: TikTok Algorithm Watch-Time Optimization",
+      "category": "Content Creation",
+      "requiredPlan": "silver",
+      "rewardPKR": 25,
+      "estimatedMinutes": 3,
+      "learningSnippet": "TikTok values completion rate and watch loop frequency higher than simple likes. Short, dense 15-second educational videos outperform 3-minute rambling clips.",
+      "practicalQuestion": "Which technique best improves video completion rate on TikTok and Instagram Reels?",
+      "options": [
+        "A 10-second silent intro with your logo",
+        "Delivering the key takeaway immediately in the first 2 seconds, followed by quick dynamic visual cuts",
+        "Asking users to like and subscribe in the first sentence",
+        "Using low resolution 480p clips"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Immediate hook + fast pacing prevents drop-offs and pushes the video to the For You Page (FYP)."
+    },
+    {
+      "id": "task-5",
+      "title": "Canva Design: High Contrast Social Media Thumbnails",
+      "category": "Design",
+      "requiredPlan": "silver",
+      "rewardPKR": 25,
+      "estimatedMinutes": 2,
+      "learningSnippet": "Mobile screen users scroll fast. Use complementary contrasting colors (e.g. bold yellow/gold on dark obsidian or deep navy) with maximum 4-6 words on the thumbnail.",
+      "practicalQuestion": "Why should YouTube and Reels thumbnails avoid placing text in the bottom right corner?",
+      "options": [
+        "Because YouTube disallows it",
+        "Because the video duration badge overlay covers that exact area on mobile screens",
+        "Because colors look washed out there",
+        "Because it looks too aesthetic"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "The video timestamp badge (e.g. 0:45) is overlaid at the bottom right corner, obscuring any text underneath."
+    },
+    {
+      "id": "task-6",
+      "title": "E-Commerce: Winning Product Selection Criteria",
+      "category": "E-Commerce",
+      "requiredPlan": "gold",
+      "rewardPKR": 40,
+      "estimatedMinutes": 3,
+      "learningSnippet": "In Pakistani dropshipping, successful products have a \"Wow Factor\", solve a real daily pain point, are lightweight (under 1kg to minimize courier TCS/Leopard charges), and have at least 3x markup margin.",
+      "practicalQuestion": "Which product fits ideal Pakistani local dropshipping criteria best?",
+      "options": [
+        "A 15kg heavy iron dumbbell with Rs 100 profit margin",
+        "A rechargeable mini lint remover solving clothes fuzz with 3x markup and low shipping weight",
+        "Counterfeit branded luxury watches with legal risks",
+        "Expired liquid cosmetics"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "High perceived value, lightweight delivery, and strong problem-solving attributes minimize return-to-origin (RTO) rates."
+    },
+    {
+      "id": "task-7",
+      "title": "Graphic Design: Vector vs Raster for Client Logos",
+      "category": "Design Mastery",
+      "requiredPlan": "platinum",
+      "rewardPKR": 65,
+      "estimatedMinutes": 3,
+      "learningSnippet": "Client logos must be created in vector format (.AI, .EPS, .SVG) so they can be infinitely scaled from an app icon to a billboard without pixelation.",
+      "practicalQuestion": "A client requests their company logo for a 20-foot outdoor highway billboard. What format should you deliver?",
+      "options": [
+        "A 72 DPI JPEG screenshot from WhatsApp",
+        "A vector SVG / EPS / AI file built in Adobe Illustrator or vector software",
+        "A Microsoft Word document with pasted image",
+        "A low-res GIF"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Vector graphics are resolution-independent and scale seamlessly to any size without loss of fidelity."
+    },
+    {
+      "id": "task-8",
+      "title": "AI Engineering: Few-Shot Prompting Technique",
+      "category": "AI & Web",
+      "requiredPlan": "diamond",
+      "rewardPKR": 120,
+      "estimatedMinutes": 4,
+      "learningSnippet": "Few-shot prompting provides 2 to 3 exemplary input-output pairs inside the prompt before asking the AI model to perform the task. This drastically increases output accuracy and schema adherence.",
+      "practicalQuestion": "How does few-shot prompting differ from zero-shot prompting in Gemini and GPT models?",
+      "options": [
+        "Few-shot takes 10 hours to respond",
+        "Few-shot provides concrete examples of the desired format inside the prompt, while zero-shot gives no prior examples",
+        "Zero-shot uses multiple GPUs while few-shot uses one",
+        "Few-shot is only for translation"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Demonstrations anchor model tone, formatting, and structural constraints with exceptional consistency."
+    },
+    {
+      "id": "task-9",
+      "title": "High-Ticket Sales: Discovery Call Qualification Framework",
+      "category": "Agency Growth",
+      "requiredPlan": "executive",
+      "rewardPKR": 300,
+      "estimatedMinutes": 4,
+      "learningSnippet": "Use the BANT framework (Budget, Authority, Need, Timeline) before spending days preparing customized proposals for international clients.",
+      "practicalQuestion": "When an overseas prospect asks for your price on minute 2 of an introductory call, what is the best executive response?",
+      "options": [
+        "\"I can do it for $10 please hire me\"",
+        "\"Our custom solutions range based on your exact scale. Let us first spend 5 minutes clarifying your desired revenue goals so I quote accurately\"",
+        "\"Hang up the call immediately\"",
+        "\"Send me $1,000 first\""
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Anchoring price to business objectives and scope prevents commoditization and positions you as an expert consultant."
+    },
+    {
+      "id": "task-10",
+      "title": "Agency Scale: Delegation and SOP Documentation",
+      "category": "Leadership",
+      "requiredPlan": "royal",
+      "rewardPKR": 500,
+      "estimatedMinutes": 5,
+      "learningSnippet": "To scale a digital agency past $10k/month, founders must transition from working IN the business to ON the business by building Standard Operating Procedures (SOPs) and hiring junior execution specialists.",
+      "practicalQuestion": "What is the primary function of a Standard Operating Procedure (SOP) in an agency?",
+      "options": [
+        "To increase office electricity consumption",
+        "To provide step-by-step repeatable guidelines ensuring consistent delivery quality independent of who executes it",
+        "To impress bank loan officers only",
+        "To confuse new interns"
+      ],
+      "correctOptionIndex": 1,
+      "explanation": "Clear SOPs allow consistent quality, rapid onboarding, and leverage that enables founders to focus on strategic growth."
+    }
+  ],
+  "version": 1
+}

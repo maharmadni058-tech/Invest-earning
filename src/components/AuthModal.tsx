@@ -27,7 +27,8 @@ export const AuthModal: React.FC = () => {
     closeAuthModal,
     login,
     register,
-    users
+    users,
+    openAdminLoginModal
   } = useApp();
 
   // Tab: 'login' | 'register'
@@ -38,6 +39,8 @@ export const AuthModal: React.FC = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [loginError, setLoginError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 3-Step Registration form state
   const [regStep, setRegStep] = useState<1 | 2 | 3>(1);
@@ -60,6 +63,7 @@ export const AuthModal: React.FC = () => {
   useEffect(() => {
     setActiveTab(authModalTab);
     setRegError('');
+    setLoginError('');
     setRegStep(1);
   }, [authModalTab, isAuthModalOpen]);
 
@@ -90,10 +94,28 @@ export const AuthModal: React.FC = () => {
     ? users.find((u) => u.referralCode.toLowerCase() === regReferralCode.trim().toLowerCase())
     : null;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginIdentifier.trim()) return;
-    login(loginIdentifier, loginPassword);
+    if (!loginIdentifier.trim()) {
+      setLoginError('Please enter your mobile phone number or email.');
+      return;
+    }
+    if (!loginPassword.trim()) {
+      setLoginError('Please enter your account password.');
+      return;
+    }
+    setLoginError('');
+    setIsSubmitting(true);
+    try {
+      const res = await login(loginIdentifier, loginPassword);
+      if (!res.success) {
+        setLoginError(res.message || 'Invalid mobile number/email or password.');
+      }
+    } catch {
+      setLoginError('Could not connect to authentication server. Please retry.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Step 1 -> Step 2 validation
@@ -162,25 +184,33 @@ export const AuthModal: React.FC = () => {
   };
 
   // Final register
-  const executeRegistration = () => {
-    const res = register({
-      fullName: regFullName,
-      phone: regPhone,
-      email: regEmail || `${regFullName.toLowerCase().replace(/\s+/g, '')}@learntoearngold.pk`,
-      password: regPassword,
-      referralCode: regReferralCode.trim() || undefined
-    });
+  const executeRegistration = async () => {
+    setRegError('');
+    setIsSubmitting(true);
+    try {
+      const res = await register({
+        fullName: regFullName,
+        phone: regPhone,
+        email: regEmail || `${regFullName.toLowerCase().replace(/\s+/g, '')}@learntoearngold.pk`,
+        password: regPassword,
+        referralCode: regReferralCode.trim() || undefined
+      });
 
-    if (res.success) {
-      setRegFullName('');
-      setRegPhone('');
-      setRegEmail('');
-      setRegPassword('');
-      setRegConfirmPassword('');
-      setRegReferralCode('');
-      setRegStep(1);
-    } else {
-      setRegError(res.message);
+      if (res.success) {
+        setRegFullName('');
+        setRegPhone('');
+        setRegEmail('');
+        setRegPassword('');
+        setRegConfirmPassword('');
+        setRegReferralCode('');
+        setRegStep(1);
+      } else {
+        setRegError(res.message);
+      }
+    } catch {
+      setRegError('Server error while registering account. Please retry.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -314,12 +344,29 @@ export const AuthModal: React.FC = () => {
                   </span>
                 </div>
 
+                {loginError && (
+                  <div className="p-3 rounded-xl bg-red-950/60 border border-red-500/50 flex items-start gap-2.5 text-xs text-red-300 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-98 transition-all"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 disabled:opacity-60 text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-98 transition-all"
                 >
-                  <Lock className="w-4 h-4" />
-                  <span>Sign In to Gold Academy</span>
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      <span>Verifying Account...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      <span>Sign In to Gold Academy</span>
+                    </>
+                  )}
                 </button>
               </form>
 
@@ -608,10 +655,20 @@ export const AuthModal: React.FC = () => {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-98 transition-all"
+                      disabled={isSubmitting}
+                      className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 disabled:opacity-60 text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-98 transition-all"
                     >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Verify &amp; Create Gold Account</span>
+                      {isSubmitting ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                          <span>Creating Account...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Verify &amp; Create Gold Account</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>

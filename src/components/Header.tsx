@@ -37,7 +37,8 @@ export const Header: React.FC<HeaderProps> = ({
     openAuthModal,
     logout,
     isAdminAuthenticated,
-    adminLogout
+    adminLogout,
+    openAdminLoginModal
   } = useApp();
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -290,21 +291,32 @@ export const Header: React.FC<HeaderProps> = ({
               </>
             )}
 
-            {/* ADMIN CONSOLE BUTTON - HIDDEN UNLESS ADMIN MODE IS ACTIVE */}
-            {isAdminMode && (
-              <button
-                onClick={adminLogout}
-                className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30 ring-2 ring-rose-400"
-                title="Exit and lock admin console"
-              >
-                <ShieldCheck className="w-4 h-4 text-white" />
-                <span>Exit Admin</span>
-                {totalPending > 0 && (
-                  <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-red-950 text-white text-[10px] font-mono">
-                    {totalPending}
-                  </span>
-                )}
-              </button>
+            {/* ADMIN CONSOLE BUTTON - ONLY VISIBLE TO AUTHENTICATED ADMINISTRATOR */}
+            {isAdminAuthenticated && (
+              isAdminMode ? (
+                <button
+                  onClick={adminLogout}
+                  className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30 ring-2 ring-rose-400"
+                  title="Exit and lock admin console"
+                >
+                  <ShieldCheck className="w-4 h-4 text-white" />
+                  <span>Exit Admin</span>
+                  {totalPending > 0 && (
+                    <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-red-950 text-white text-[10px] font-mono">
+                      {totalPending}
+                    </span>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsAdminMode(true)}
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 hover:text-white font-bold text-xs transition-all shadow-sm shadow-red-950/40"
+                  title="Open Admin Console"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
+                  <span>Admin Panel</span>
+                </button>
+              )
             )}
           </div>
       </div>

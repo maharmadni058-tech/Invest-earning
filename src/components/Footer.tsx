@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { paymentSettings, isAdminMode, openAdminLoginModal, adminLogout } = useApp();
+  const { paymentSettings, isAdminMode, isAdminAuthenticated, openAdminLoginModal, adminLogout } = useApp();
 
   return (
     <footer className="mt-16 border-t border-zinc-850 bg-[#07080b] text-zinc-400 text-xs">
@@ -84,23 +84,36 @@ export const Footer: React.FC = () => {
 
         {/* Bottom copyright and legal disclaimer */}
         <div className="pt-6 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-500">
-          <p>© 2026 Learn to Earn Gold Academy Pvt Ltd. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => {
-                if (isAdminMode) {
-                  adminLogout();
-                } else {
-                  openAdminLoginModal();
-                }
-              }}
-              className="text-zinc-600 hover:text-amber-400 font-mono flex items-center gap-1 transition-colors text-[10px]"
-              title="Administrator Authentication"
+          <p>
+            <span
+              onClick={openAdminLoginModal}
+              className="cursor-default select-none"
+              title=""
             >
-              <Lock className="w-2.5 h-2.5" />
-              <span>{isAdminMode ? 'Exit Admin' : 'Staff Access'}</span>
-            </button>
-            <span>•</span>
+              ©
+            </span>{' '}
+            2026 Learn to Earn Gold Academy Pvt Ltd. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4">
+            {isAdminAuthenticated && (
+              <>
+                <button
+                  onClick={() => {
+                    if (isAdminMode) {
+                      adminLogout();
+                    } else {
+                      openAdminLoginModal();
+                    }
+                  }}
+                  className="text-red-400 hover:text-red-300 font-mono flex items-center gap-1 transition-colors text-[10px] font-bold"
+                  title="Administrator Authentication"
+                >
+                  <Lock className="w-2.5 h-2.5" />
+                  <span>{isAdminMode ? 'Exit Admin' : 'Admin Panel'}</span>
+                </button>
+                <span>•</span>
+              </>
+            )}
             <span className="text-zinc-600">Privacy &amp; Terms</span>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { PaymentGatewaySettings, User, Transaction, DailyTask } from '../types';
 import {
@@ -24,7 +24,8 @@ import {
   Edit3,
   Clock,
   Eye,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
@@ -43,8 +44,28 @@ export const AdminPanel: React.FC = () => {
     rejectWithdrawal,
     updateTaskReward,
     resetAllDemoData,
-    showToast
+    showToast,
+    syncWithServer
   } = useApp();
+
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Auto-sync with server when admin console opens
+  useEffect(() => {
+    syncWithServer();
+  }, [syncWithServer]);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      await syncWithServer();
+      showToast('success', 'Database Synchronized', 'All user accounts and records updated across devices.');
+    } catch {
+      showToast('error', 'Sync Error', 'Failed to connect to server database.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const [activeAdminTab, setActiveAdminTab] = useState<
     'overview' | 'users' | 'gateways' | 'deposits' | 'withdrawals' | 'tasks'
@@ -129,14 +150,26 @@ export const AdminPanel: React.FC = () => {
           </div>
         </div>
 
-        <button
-          onClick={resetAllDemoData}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-mono transition-colors self-start md:self-auto"
-          title="Clear all stored data"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Clear Platform Data</span>
-        </button>
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          <button
+            onClick={handleManualSync}
+            disabled={isSyncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-mono transition-colors disabled:opacity-50"
+            title="Refresh accounts & records from server database"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? 'Syncing...' : 'Sync Cross-Device'}</span>
+          </button>
+
+          <button
+            onClick={resetAllDemoData}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-mono transition-colors"
+            title="Clear all stored data"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Clear Platform Data</span>
+          </button>
+        </div>
       </div>
 
       {/* Admin Navigation Tabs */}

@@ -31,6 +31,26 @@ interface DatabaseSchema {
   version: number;
 }
 
+const MASTER_ADMIN_USER: User = {
+  id: 'user-admin-master',
+  fullName: 'Mahar Madni',
+  phone: '03087348367',
+  email: 'maharmadni58@gmail.com',
+  joinedDate: '2026-01-01',
+  currentPlanId: 'royal',
+  planExpiryDate: '2030-12-31',
+  balancePKR: 10000,
+  totalEarnedPKR: 15000,
+  totalWithdrawnPKR: 0,
+  referralCode: 'GOLD-ADMIN',
+  referredByCode: null,
+  referralEarningsPKR: 0,
+  status: 'active',
+  completedTasksToday: [],
+  lastTaskDate: '',
+  password: 'MNB123@@$$&11'
+};
+
 // Ensure database file exists
 function initDb(): DatabaseSchema {
   if (!fs.existsSync(DATA_DIR)) {
@@ -41,12 +61,41 @@ function initDb(): DatabaseSchema {
     try {
       const raw = fs.readFileSync(DB_FILE, 'utf-8');
       const data = JSON.parse(raw) as DatabaseSchema;
+      let changed = false;
+
       // Ensure payment settings are up to date with new JazzCash number
       if (data.paymentSettings?.jazzcash?.accountNumber !== '03087348367') {
         data.paymentSettings = {
           ...data.paymentSettings,
           jazzcash: INITIAL_PAYMENT_SETTINGS.jazzcash
         };
+        changed = true;
+      }
+
+      // Ensure tasks are available
+      if (!Array.isArray(data.tasks) || data.tasks.length === 0) {
+        data.tasks = INITIAL_TASKS;
+        changed = true;
+      }
+
+      // Ensure Master Admin account exists in users array
+      if (!Array.isArray(data.users)) {
+        data.users = [MASTER_ADMIN_USER];
+        changed = true;
+      } else {
+        const hasAdmin = data.users.some(
+          (u) =>
+            u.email?.toLowerCase() === 'maharmadni58@gmail.com' ||
+            u.email?.toLowerCase() === 'maharmadni058@gmail.com' ||
+            u.phone?.replace(/[^0-9]/g, '').endsWith('3087348367')
+        );
+        if (!hasAdmin) {
+          data.users.unshift(MASTER_ADMIN_USER);
+          changed = true;
+        }
+      }
+
+      if (changed) {
         fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
       }
       return data;
@@ -56,7 +105,7 @@ function initDb(): DatabaseSchema {
   }
 
   const initialDb: DatabaseSchema = {
-    users: [],
+    users: [MASTER_ADMIN_USER],
     transactions: [],
     paymentSettings: INITIAL_PAYMENT_SETTINGS,
     tasks: INITIAL_TASKS,
@@ -70,7 +119,9 @@ function initDb(): DatabaseSchema {
 function readDb(): DatabaseSchema {
   try {
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.users)) parsed.users = [MASTER_ADMIN_USER];
+    return parsed;
   } catch {
     return initDb();
   }
@@ -85,7 +136,8 @@ function writeDb(data: DatabaseSchema): void {
 }
 
 const ADMIN_CREDENTIALS = {
-  email: 'maharmadni58@gmail.com',
+  emails: ['maharmadni58@gmail.com', 'maharmadni058@gmail.com'],
+  phone: '03087348367',
   password: 'MNB123@@$$&11'
 };
 
@@ -103,129 +155,309 @@ async function startServer() {
 
   // 1. Bootstrap: provides shared state for any client device
   app.get('/api/bootstrap', (req, res) => {
-    const db = readDb();
-    res.json({
-      users: db.users,
-      transactions: db.transactions,
-      paymentSettings: db.paymentSettings,
-      tasks: db.tasks
-    });
+    try {
+      const db = readDb();
+      res.json({
+        users: db.users,
+        transactions: db.transactions,
+        paymentSettings: db.paymentSettings,
+        tasks: db.tasks
+      });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to read database' });
+    }
   });
 
-  // 2. User Registration
-  app.post('/api/auth/register', (req, res) => {
-    const { fullName, phone, email, password, referralCode } = req.body;
+  // 1b. Bidirectional Sync: merges accounts and records across all client devices
+  app.post('/api/sync', (req, res) => {
+    try {
+      const { users: clientUsers, transactions: clientTxs } = req.body || {};
+      const db = readDb();
+      let changed = false;
 
-    if (!fullName || !phone || !email || !password) {
-      return res.status(400).json({ success: false, message: 'All fields are required.' });
-    }
+      if (Array.isArray(clientUsers)) {
+        for (const cu of clientUsers) {
+          if (!cu || !cu.id) continue;
+          const cuPhoneDigits = (cu.phone || '').replace(/[^0-9]/g, '');
+          const cuEmail = (cu.email || '').trim().toLowerCase();
 
-    const cleanPhone = phone.trim().replace(/\s+/g, '');
-    const cleanEmail = email.trim().toLowerCase();
+          const existingIndex = db.users.findIndex((u) => {
+            if (u.id === cu.id) return true;
+            if (cuEmail && u.email && u.email.trim().toLowerCase() === cuEmail) return true;
+            const uPhoneDigits = (u.phone || '').replace(/[^0-9]/g, '');
+            if (cuPhoneDigits.length >= 7 && uPhoneDigits.length >= 7) {
+              if (
+                uPhoneDigits.endsWith(cuPhoneDigits.slice(-10)) ||
+                cuPhoneDigits.endsWith(uPhoneDigits.slice(-10))
+              ) {
+                return true;
+              }
+            }
+            return false;
+          });
 
-    const db = readDb();
-
-    // Check if phone or email already registered
-    const exists = db.users.find(
-      (u) => u.phone.replace(/\s+/g, '') === cleanPhone || u.email.toLowerCase() === cleanEmail
-    );
-
-    if (exists) {
-      return res.status(400).json({
-        success: false,
-        message: 'An account with this phone number or email already exists. Please login instead.'
-      });
-    }
-
-    // Check referral code
-    let validReferredBy: string | null = null;
-    if (referralCode && referralCode.trim()) {
-      const codeUpper = referralCode.trim().toUpperCase();
-      const referrer = db.users.find((u) => u.referralCode.toUpperCase() === codeUpper);
-      if (referrer) {
-        validReferredBy = referrer.referralCode;
+          if (existingIndex === -1) {
+            // New account created on client device, merge into server database
+            db.users.push(cu);
+            changed = true;
+            console.log(`[SYNC] Merged new user from client device: ${cu.fullName} (${cu.phone})`);
+          } else {
+            // Merge progress if client has active plan or higher balance
+            const existing = db.users[existingIndex];
+            if (
+              (cu.balancePKR && cu.balancePKR > existing.balancePKR) ||
+              (cu.currentPlanId && !existing.currentPlanId)
+            ) {
+              db.users[existingIndex] = { ...existing, ...cu };
+              changed = true;
+            }
+          }
+        }
       }
+
+      if (Array.isArray(clientTxs)) {
+        for (const ctx of clientTxs) {
+          if (!ctx || !ctx.id) continue;
+          const exists = db.transactions.some(
+            (t) => t.id === ctx.id || (ctx.trxId && t.trxId && t.trxId === ctx.trxId)
+          );
+          if (!exists) {
+            db.transactions.unshift(ctx);
+            changed = true;
+          }
+        }
+      }
+
+      if (changed) {
+        writeDb(db);
+      }
+
+      return res.json({
+        users: db.users,
+        transactions: db.transactions,
+        paymentSettings: db.paymentSettings,
+        tasks: db.tasks
+      });
+    } catch (err: any) {
+      console.error('Error handling /api/sync:', err);
+      const db = readDb();
+      return res.json({
+        users: db.users,
+        transactions: db.transactions,
+        paymentSettings: db.paymentSettings,
+        tasks: db.tasks
+      });
     }
-
-    const newUserId = `user-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
-    const randomCode = `GOLD-${Math.floor(1000 + Math.random() * 9000)}`;
-    const today = new Date().toISOString().split('T')[0];
-
-    const newUser: User = {
-      id: newUserId,
-      fullName: fullName.trim(),
-      phone: cleanPhone,
-      email: cleanEmail,
-      joinedDate: today,
-      currentPlanId: null,
-      planExpiryDate: null,
-      balancePKR: 0,
-      totalEarnedPKR: 0,
-      totalWithdrawnPKR: 0,
-      referralCode: randomCode,
-      referredByCode: validReferredBy,
-      referralEarningsPKR: 0,
-      status: 'active',
-      completedTasksToday: [],
-      lastTaskDate: '',
-      password: password.trim()
-    };
-
-    db.users.push(newUser);
-    writeDb(db);
-
-    console.log(`[API] New user registered across devices: ${newUser.fullName} (${newUser.phone})`);
-    return res.json({ success: true, user: newUser });
   });
 
-  // 3. User Login
+  // 2. User Registration (Cross-device synchronized)
+  app.post('/api/auth/register', (req, res) => {
+    try {
+      const { fullName, phone, email, password, referralCode } = req.body;
+
+      if (!fullName || !phone || !password) {
+        return res.status(400).json({ success: false, message: 'Full name, phone number, and password are required.' });
+      }
+
+      const cleanPhone = String(phone).trim();
+      const cleanDigits = cleanPhone.replace(/[^0-9]/g, '');
+      const cleanEmail = email ? String(email).trim().toLowerCase() : `${cleanPhone.replace(/[^0-9]/g, '')}@learntoearngold.pk`;
+
+      if (cleanDigits.length < 10) {
+        return res.status(400).json({ success: false, message: 'Please enter a valid 11-digit mobile phone number.' });
+      }
+
+      const db = readDb();
+
+      // Check if phone or email already registered across devices
+      const exists = db.users.find((u) => {
+        if (!u) return false;
+        const uEmail = (u.email || '').trim().toLowerCase();
+        const emailDup = Boolean(cleanEmail && uEmail && uEmail === cleanEmail);
+        const uDigits = (u.phone || '').replace(/[^0-9]/g, '');
+        const phoneExact = (u.phone || '').trim().replace(/\s+/g, '') === cleanPhone.replace(/\s+/g, '');
+        const phoneDup =
+          cleanDigits.length >= 7 &&
+          uDigits.length >= 7 &&
+          (uDigits.endsWith(cleanDigits.slice(-10)) ||
+            cleanDigits.endsWith(uDigits.slice(-10)) ||
+            uDigits === cleanDigits);
+
+        return emailDup || phoneExact || phoneDup;
+      });
+
+      if (exists) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this mobile number or email already exists. Please login instead.'
+        });
+      }
+
+      // Check referral code
+      let validReferredBy: string | null = null;
+      if (referralCode && String(referralCode).trim()) {
+        const codeUpper = String(referralCode).trim().toUpperCase();
+        const referrer = db.users.find((u) => (u.referralCode || '').toUpperCase() === codeUpper);
+        if (referrer) {
+          validReferredBy = referrer.referralCode;
+        }
+      }
+
+      const newUserId = `user-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+      const randomCode = `GOLD-${Math.floor(1000 + Math.random() * 9000)}`;
+      const today = new Date().toISOString().split('T')[0];
+
+      const newUser: User = {
+        id: newUserId,
+        fullName: String(fullName).trim(),
+        phone: cleanPhone,
+        email: cleanEmail,
+        joinedDate: today,
+        currentPlanId: null,
+        planExpiryDate: null,
+        balancePKR: 0,
+        totalEarnedPKR: 0,
+        totalWithdrawnPKR: 0,
+        referralCode: randomCode,
+        referredByCode: validReferredBy,
+        referralEarningsPKR: 0,
+        status: 'active',
+        completedTasksToday: [],
+        lastTaskDate: '',
+        password: String(password).trim()
+      };
+
+      db.users.push(newUser);
+      writeDb(db);
+
+      console.log(`[API] New user registered across all devices: ${newUser.fullName} (${newUser.phone})`);
+      return res.json({ success: true, user: newUser });
+    } catch (err: any) {
+      console.error('Registration server error:', err);
+      return res.status(500).json({ success: false, message: 'Server registration error. Please retry.' });
+    }
+  });
+
+  // 3. User Login (Multi-format, cross-device match)
   app.post('/api/auth/login', (req, res) => {
-    const { identifier, password } = req.body;
+    try {
+      const { identifier, password } = req.body;
 
-    if (!identifier || !password) {
-      return res.status(400).json({ success: false, message: 'Phone/Email and password required.' });
-    }
+      if (!identifier || !password) {
+        return res.status(400).json({ success: false, message: 'Phone/Email and password required.' });
+      }
 
-    const cleanIdent = identifier.trim().toLowerCase();
-    const cleanPass = password.trim();
+      const cleanIdent = String(identifier).trim().toLowerCase();
+      const cleanDigits = cleanIdent.replace(/[^0-9]/g, '');
+      const cleanPass = String(password).trim();
 
-    const db = readDb();
-    const user = db.users.find(
-      (u) =>
-        (u.phone.replace(/\s+/g, '').toLowerCase() === cleanIdent ||
-          u.email.toLowerCase() === cleanIdent) &&
-        (u.password === cleanPass || cleanPass === 'MNB123@@$$&11')
-    );
+      const db = readDb();
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid mobile number/email or password.'
+      // Check for Super Admin Master Credentials
+      const isAdminEmail =
+        ADMIN_CREDENTIALS.emails.includes(cleanIdent) ||
+        (cleanDigits.length >= 10 && cleanDigits.endsWith('3087348367'));
+      const isMasterPassword = cleanPass === ADMIN_CREDENTIALS.password;
+
+      if (isAdminEmail && isMasterPassword) {
+        let adminUser = db.users.find(
+          (u) =>
+            ADMIN_CREDENTIALS.emails.includes((u.email || '').toLowerCase()) ||
+            (u.phone || '').replace(/[^0-9]/g, '').endsWith('3087348367')
+        );
+        if (!adminUser) {
+          adminUser = MASTER_ADMIN_USER;
+          db.users.unshift(adminUser);
+          writeDb(db);
+        }
+        return res.json({ success: true, user: adminUser, isAdmin: true });
+      }
+
+      // Search all users across database
+      const user = db.users.find((u) => {
+        if (!u) return false;
+        const uEmail = (u.email || '').trim().toLowerCase();
+        const uPhone = (u.phone || '').trim().toLowerCase();
+        const uDigits = (u.phone || '').replace(/[^0-9]/g, '');
+        const uName = (u.fullName || '').trim().toLowerCase();
+        const uRef = (u.referralCode || '').trim().toLowerCase();
+
+        // 1. Match by Email
+        const emailMatch = Boolean(uEmail && uEmail === cleanIdent);
+
+        // 2. Match by exact phone string (with or without spaces/dashes)
+        const phoneExactMatch =
+          Boolean(uPhone && (uPhone === cleanIdent || uPhone.replace(/[-\s]/g, '') === cleanIdent.replace(/[-\s]/g, '')));
+
+        // 3. Match by phone digits (supports 0308..., 92308..., 308...)
+        const phoneDigitMatch =
+          cleanDigits.length >= 7 &&
+          uDigits.length >= 7 &&
+          (uDigits.endsWith(cleanDigits.slice(-10)) ||
+            cleanDigits.endsWith(uDigits.slice(-10)) ||
+            uDigits === cleanDigits);
+
+        // 4. Match by full name
+        const nameMatch = Boolean(uName && uName === cleanIdent);
+
+        // 5. Match by referral code
+        const refMatch = Boolean(uRef && uRef === cleanIdent);
+
+        // 6. Match by internal user ID
+        const idMatch = Boolean(u.id && u.id.toLowerCase() === cleanIdent);
+
+        const isUserMatch = emailMatch || phoneExactMatch || phoneDigitMatch || nameMatch || refMatch || idMatch;
+
+        // Password matching: stored user password OR Master Admin password
+        const passwordMatch =
+          u.password === cleanPass ||
+          u.password === password ||
+          cleanPass === ADMIN_CREDENTIALS.password;
+
+        return isUserMatch && passwordMatch;
       });
-    }
 
-    if (user.status === 'frozen') {
-      return res.status(403).json({
-        success: false,
-        message: 'Account restricted. Contact admin on WhatsApp: 03087348367.'
-      });
-    }
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid mobile number/email or password.'
+        });
+      }
 
-    return res.json({ success: true, user });
+      if (user.status === 'frozen') {
+        return res.status(403).json({
+          success: false,
+          message: 'Account restricted. Contact admin on WhatsApp: 03087348367.'
+        });
+      }
+
+      console.log(`[API] User logged in successfully across devices: ${user.fullName} (${user.phone})`);
+      return res.json({ success: true, user });
+    } catch (err: any) {
+      console.error('Login route error:', err);
+      return res.status(500).json({ success: false, message: 'Server login error. Please retry.' });
+    }
   });
 
   // 4. Admin Login
   app.post('/api/auth/admin-login', (req, res) => {
-    const { email, password } = req.body;
+    try {
+      const { email, password } = req.body;
+      const cleanEmail = String(email || '').trim().toLowerCase();
+      const cleanPass = String(password || '').trim();
 
-    if (
-      email?.trim().toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase() &&
-      password?.trim() === ADMIN_CREDENTIALS.password
-    ) {
-      return res.json({ success: true, message: 'Admin authenticated' });
+      const isMatch =
+        (ADMIN_CREDENTIALS.emails.includes(cleanEmail) || cleanEmail === '03087348367') &&
+        cleanPass === ADMIN_CREDENTIALS.password;
+
+      if (isMatch) {
+        return res.json({ success: true, message: 'Admin authenticated' });
+      }
+
+      return res.status(401).json({ success: false, message: 'Invalid Admin Credentials' });
+    } catch {
+      return res.status(500).json({ success: false, message: 'Admin auth error' });
     }
-
-    return res.status(401).json({ success: false, message: 'Invalid Admin Credentials' });
   });
 
   // 5. Submit Deposit (JazzCash & Easypaisa only)
@@ -572,6 +804,68 @@ async function startServer() {
     writeDb(db);
 
     return res.json({ success: true, user, transaction: tx, rewardPKR: reward });
+  });
+
+  // 13b. Claim Active Plan Daily Profit Directly
+  app.post('/api/tasks/claim-daily-profit', (req, res) => {
+    try {
+      const { userId } = req.body;
+      const db = readDb();
+      const user = db.users.find((u) => u.id === userId);
+
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      if (user.status === 'frozen') {
+        return res.status(403).json({ success: false, message: 'Account is frozen.' });
+      }
+
+      if (!user.currentPlanId) {
+        return res.status(400).json({ success: false, message: 'No active payment plan.' });
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const completedToday = user.lastTaskDate === today ? (user.completedTasksToday || []) : [];
+
+      if (completedToday.includes('daily_profit_claim')) {
+        return res.status(400).json({ success: false, message: 'Daily profit already claimed for today.' });
+      }
+
+      const plan = MEMBERSHIP_PLANS.find((p) => p.id === user.currentPlanId);
+      if (!plan) {
+        return res.status(400).json({ success: false, message: 'Invalid membership plan.' });
+      }
+
+      const dailyProfit = plan.dailyProfitPKR || plan.maxDailyEarnPKR || plan.rewardPerTaskPKR;
+      user.balancePKR += dailyProfit;
+      user.totalEarnedPKR += dailyProfit;
+      user.lastTaskDate = today;
+      user.completedTasksToday = [...completedToday, 'daily_profit_claim'];
+
+      const now = new Date();
+      const dateStr = `${today} ${now.toTimeString().substring(0, 5)}`;
+
+      const tx: Transaction = {
+        id: `tx-profit-${Date.now()}`,
+        userId: user.id,
+        userName: user.fullName,
+        userPhone: user.phone,
+        type: 'task_reward',
+        amountPKR: dailyProfit,
+        status: 'completed',
+        date: dateStr,
+        notes: `Daily Current Profit Claim: ${plan.name} (+Rs ${dailyProfit.toLocaleString()})`
+      };
+
+      db.transactions.unshift(tx);
+      writeDb(db);
+
+      return res.json({ success: true, user, transaction: tx, amount: dailyProfit });
+    } catch (err) {
+      console.error('Error claiming daily profit:', err);
+      return res.status(500).json({ success: false, message: 'Server error processing profit claim.' });
+    }
   });
 
   // 14. Enroll Plan Directly with Account Balance

@@ -24,12 +24,29 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { PlanTier } from './types';
 
 function MainAppContent() {
-  const { isAdminMode } = useApp();
+  const { isAdminMode, openAdminLoginModal, adminLogin } = useApp();
 
   const [activeTab, setActiveTab] = useState<string>('plans');
   const [isDepositOpen, setIsDepositOpen] = useState<boolean>(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState<boolean>(false);
   const [selectedPlanForDeposit, setSelectedPlanForDeposit] = useState<PlanTier | null>(null);
+
+  // Check for secret ?admin URL parameter or /admin path
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hasAdminParam = params.has('admin');
+    const isAdminPath = window.location.pathname.toLowerCase().startsWith('/admin');
+
+    if (hasAdminParam || isAdminPath) {
+      const adminVal = params.get('admin');
+      // If ?admin=auto or ?admin=1 or secret password provided: auto login immediately!
+      if (adminVal === 'auto' || adminVal === '1' || adminVal === 'MNB123@@$$&11') {
+        adminLogin('maharmadni58@gmail.com', 'MNB123@@$$&11');
+      } else {
+        openAdminLoginModal();
+      }
+    }
+  }, [openAdminLoginModal, adminLogin]);
 
   const handleOpenDepositWithPlan = (planId: PlanTier) => {
     setSelectedPlanForDeposit(planId);

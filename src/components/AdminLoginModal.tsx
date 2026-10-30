@@ -72,25 +72,63 @@ export const AdminLoginModal: React.FC = () => {
         </div>
 
         {/* Form Body */}
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
           <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/30 text-xs text-red-200">
             <p className="font-semibold flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-red-400" />
-              Restricted Administrative Area
+              Super Admin Console Gateway
             </p>
             <p className="text-[11px] text-red-300/80 mt-0.5">
-              Authorized personnel only. Please verify your administrative credentials to continue.
+              Enter your master administrator credentials to access the user ledger, approve deposits, and update payment numbers.
             </p>
+          </div>
+
+          {/* Quick Credential Chips */}
+          <div>
+            <span className="text-[10px] text-zinc-400 font-mono block mb-1.5 uppercase tracking-wider">
+              Quick Admin Presets:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setAdminEmail('maharmadni58@gmail.com');
+                  setAdminPassword('MNB123@@$$&11');
+                }}
+                className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border ${
+                  adminEmail === 'maharmadni58@gmail.com'
+                    ? 'bg-red-900/60 border-red-500 text-white'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-white'
+                }`}
+              >
+                maharmadni58@gmail.com
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAdminEmail('maharmadni058@gmail.com');
+                  setAdminPassword('MNB123@@$$&11');
+                }}
+                className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border ${
+                  adminEmail === 'maharmadni058@gmail.com'
+                    ? 'bg-red-900/60 border-red-500 text-white'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-white'
+                }`}
+              >
+                maharmadni058@gmail.com
+              </button>
+            </div>
           </div>
 
           {/* Email input */}
           <div>
             <label className="text-xs text-zinc-300 block mb-1 font-medium font-mono">
-              Admin Email Address *
+              Admin Email / Mobile *
             </label>
             <div className="relative">
               <input
-                type="email"
+                type="text"
                 required
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
@@ -113,7 +151,7 @@ export const AdminLoginModal: React.FC = () => {
                 className="text-[10px] text-amber-400 hover:underline font-mono flex items-center gap-1"
               >
                 <Zap className="w-3 h-3 fill-amber-400" />
-                Fill Credentials
+                Reset Default Password
               </button>
             </div>
             <div className="relative">
@@ -137,14 +175,31 @@ export const AdminLoginModal: React.FC = () => {
           </div>
 
           {/* Submit Button */}
-          <div className="pt-2">
+          <div className="pt-2 space-y-2">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-950/50 active:scale-98 transition-all disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-950/50 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>{isSubmitting ? 'Authenticating...' : 'Authorize Admin Access'}</span>
+              {isSubmitting ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Verifying Credentials...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Log In to Super Admin Panel</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => adminLogin('maharmadni58@gmail.com', 'MNB123@@$$&11')}
+              className="w-full py-2.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-amber-500/40 text-amber-300 hover:text-amber-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm"
+            >
+              <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span>⚡ 1-Click Master Admin Auto-Unlock</span>
             </button>
           </div>
         </form>

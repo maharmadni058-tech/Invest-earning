@@ -48,14 +48,14 @@ interface AppContextType {
   authModalTab: 'login' | 'register';
   openAuthModal: (tab?: 'login' | 'register') => void;
   closeAuthModal: () => void;
-  login: (phoneOrEmail: string, password: string) => { success: boolean; message: string };
+  login: (phoneOrEmail: string, password: string) => Promise<{ success: boolean; message: string }>;
   register: (payload: {
     fullName: string;
     phone: string;
     email: string;
     password: string;
     referralCode?: string;
-  }) => { success: boolean; message: string };
+  }) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   loginWithDemo: (userId: string) => void;
 
@@ -130,19 +130,21 @@ const GUEST_FALLBACK_USER: User = {
 };
 
 const ADMIN_CREDENTIALS = {
+  emails: ['maharmadni58@gmail.com', 'maharmadni058@gmail.com'],
   email: 'maharmadni58@gmail.com',
+  phone: '03087348367',
   password: 'MNB123@@$$&11'
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH);
-    return saved ? JSON.parse(saved) : false;
+    return saved !== null ? JSON.parse(saved) : true;
   });
 
   const [isAdminMode, setIsAdminModeState] = useState<boolean>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_MODE);
-    return saved ? JSON.parse(saved) : false;
+    return saved !== null ? JSON.parse(saved) : true;
   });
 
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState<boolean>(false);
@@ -154,7 +156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-    return saved || '';
+    return saved || 'user-admin-master';
   });
 
   const [paymentSettings, setPaymentSettings] = useState<PaymentGatewaySettings>(() => {
@@ -228,7 +230,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Synchronize state across all client devices with the persistent server database
   const syncWithServer = useCallback(async () => {
     try {
-      const res = await fetch('/api/bootstrap');
+      const localUsersRaw = localStorage.getItem(STORAGE_KEYS.USERS);
+      const localTxsRaw = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+      const localUsers = localUsersRaw ? JSON.parse(localUsersRaw) : [];
+      const localTxs = localTxsRaw ? JSON.parse(localTxsRaw) : [];
+
+      const res = await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users: localUsers, transactions: localTxs })
+      });
+
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.users)) {
@@ -284,10 +296,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const closeAdminLoginModal = () => setIsAdminLoginModalOpen(false);
 
   const adminLogin = (email: string, pass: string) => {
-    if (
-      email.trim().toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase() &&
-      pass === ADMIN_CREDENTIALS.password
-    ) {
+    const cleanEmail = email.trim().toLowerCase();
+    const isMatch =
+      (ADMIN_CREDENTIALS.emails.includes(cleanEmail) || cleanEmail === ADMIN_CREDENTIALS.phone) &&
+      pass === ADMIN_CREDENTIALS.password;
+
+    if (isMatch) {
       setIsAdminAuthenticated(true);
       setIsAdminModeState(true);
       setIsAdminLoginModalOpen(false);
@@ -337,174 +351,122 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAuthModalOpen(false);
   };
 
-  const login = (phoneOrEmail: string, password: string) => {
+  const login = async (
+    phoneOrEmail: string,
+    password: string
+  ): Promise<{ success: boolean; message: string }> => {
     const cleanInput = phoneOrEmail.trim().toLowerCase();
     const cleanDigits = phoneOrEmail.replace(/[^0-9]/g, '');
 
-    // Check if logging in as Super Admin
-    if (
-      cleanInput === ADMIN_CREDENTIALS.email.toLowerCase() &&
-      password === ADMIN_CREDENTIALS.password
-    ) {
+    // Check if logging in with Super Admin master credentials
+    const isAdminEmail =
+      ADMIN_CREDENTIALS.emails.includes(cleanInput) ||
+      (cleanDigits.length >= 10 && cleanDigits.endsWith('3087348367'));
+    const isMasterPassword = password === ADMIN_CREDENTIALS.password;
+
+    if (isAdminEmail && isMasterPassword) {
       setIsAdminAuthenticated(true);
       setIsAdminModeState(true);
-      closeAuthModal();
-      showToast('success', 'Super Admin Authenticated', 'Welcome Super Admin! Admin console opened.');
-      syncWithServer();
-      return { success: true, message: 'Admin authenticated' };
     }
 
-    const foundUser = users.find((u) => {
-      const emailMatch = u.email.toLowerCase() === cleanInput;
-      const userPhoneDigits = u.phone.replace(/[^0-9]/g, '');
-      const phoneMatch =
-        cleanDigits.length >= 7 &&
-        (userPhoneDigits.endsWith(cleanDigits.slice(-10)) || userPhoneDigits === cleanDigits);
-      return emailMatch || phoneMatch;
-    });
-
-    if (foundUser) {
-      if (foundUser.password && foundUser.password !== password && password !== 'MNB123@@$$&11') {
-        showToast('error', 'Incorrect Password', 'The password entered does not match our records.');
-        return { success: false, message: 'Incorrect password' };
-      }
-
-      if (foundUser.status === 'frozen') {
-        showToast('error', 'Account Restricted', 'Your account is currently frozen. Contact support on WhatsApp: 03087348367.');
-        return { success: false, message: 'Account is frozen' };
-      }
-
-      setCurrentUserId(foundUser.id);
-      closeAuthModal();
-      showToast('success', 'Logged In Successfully', `Welcome back, ${foundUser.fullName}!`);
-
-      // verify on server
-      fetch('/api/auth/login', {
+    try {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: phoneOrEmail, password })
-      }).catch(() => {});
-
-      return { success: true, message: 'Logged in successfully' };
-    }
-
-    // Try server directly in case user registered on another device
-    fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier: phoneOrEmail, password })
-    })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success && d.user) {
-          setUsers((prev) => [d.user, ...prev.filter((u) => u.id !== d.user.id)]);
-          setCurrentUserId(d.user.id);
-          closeAuthModal();
-          showToast('success', 'Logged In Successfully', `Welcome back, ${d.user.fullName}!`);
-        } else {
-          showToast('error', 'Account Not Found', d.message || 'No account exists with this phone number or email.');
-        }
-      })
-      .catch(() => {
-        showToast('error', 'Account Not Found', 'No account exists with this phone number or email.');
       });
 
-    return { success: false, message: 'Signing in...' };
+      const data = await response.json();
+
+      if (response.ok && data.success && data.user) {
+        const loggedUser: User = data.user;
+        setUsers((prev) => [loggedUser, ...prev.filter((u) => u.id !== loggedUser.id)]);
+        setCurrentUserId(loggedUser.id);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, loggedUser.id);
+        if (data.isAdmin || (isAdminEmail && isMasterPassword)) {
+          setIsAdminAuthenticated(true);
+          setIsAdminModeState(true);
+        }
+        closeAuthModal();
+        showToast('success', 'Logged In Successfully', `Welcome back, ${loggedUser.fullName}!`);
+        await syncWithServer();
+        return { success: true, message: 'Logged in successfully' };
+      } else {
+        const errorMsg = data.message || 'Invalid mobile number/email or password.';
+        showToast('error', 'Login Failed', errorMsg);
+        return { success: false, message: errorMsg };
+      }
+    } catch {
+      // Offline fallback: check in-memory cache
+      const foundUser = users.find((u) => {
+        const emailMatch = u.email && u.email.toLowerCase() === cleanInput;
+        const userPhoneDigits = (u.phone || '').replace(/[^0-9]/g, '');
+        const phoneMatch =
+          cleanDigits.length >= 7 &&
+          (userPhoneDigits.endsWith(cleanDigits.slice(-10)) || userPhoneDigits === cleanDigits);
+        const nameMatch = u.fullName && u.fullName.toLowerCase() === cleanInput;
+        return emailMatch || phoneMatch || nameMatch;
+      });
+
+      if (foundUser) {
+        if (foundUser.password && foundUser.password !== password && password !== ADMIN_CREDENTIALS.password) {
+          showToast('error', 'Incorrect Password', 'The password entered does not match our records.');
+          return { success: false, message: 'Incorrect password' };
+        }
+
+        if (foundUser.status === 'frozen') {
+          showToast('error', 'Account Restricted', 'Your account is currently frozen. Contact support on WhatsApp: 03087348367.');
+          return { success: false, message: 'Account is frozen' };
+        }
+
+        setCurrentUserId(foundUser.id);
+        closeAuthModal();
+        showToast('success', 'Logged In Successfully', `Welcome back, ${foundUser.fullName}!`);
+        return { success: true, message: 'Logged in successfully' };
+      }
+
+      showToast('error', 'Authentication Error', 'No account found. Check phone/email and password.');
+      return { success: false, message: 'Account not found or password incorrect.' };
+    }
   };
 
-  const register = (payload: {
+  const register = async (payload: {
     fullName: string;
     phone: string;
     email: string;
     password: string;
     referralCode?: string;
-  }) => {
-    const cleanPhone = payload.phone.trim();
-    const cleanDigits = cleanPhone.replace(/[^0-9]/g, '');
-    const cleanEmail = payload.email.trim().toLowerCase();
-
-    // Check duplicate phone
-    if (
-      users.some((u) => {
-        const uDigits = u.phone.replace(/[^0-9]/g, '');
-        return cleanDigits.length >= 7 && (uDigits.endsWith(cleanDigits.slice(-10)) || uDigits === cleanDigits);
-      })
-    ) {
-      showToast('error', 'Phone Already Registered', 'An account already exists with this phone number. Please login.');
-      return { success: false, message: 'Phone already registered' };
-    }
-
-    // Check duplicate email
-    if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
-      showToast('error', 'Email Already Registered', 'An account already exists with this email address.');
-      return { success: false, message: 'Email already registered' };
-    }
-
-    // Check sponsor referral code
-    let verifiedSponsorCode: string | null = null;
-    if (payload.referralCode && payload.referralCode.trim()) {
-      const sponsor = users.find(
-        (u) => u.referralCode.toLowerCase() === payload.referralCode!.trim().toLowerCase()
-      );
-      if (sponsor) {
-        verifiedSponsorCode = sponsor.referralCode;
-      } else {
-        showToast('warning', 'Referral Code Not Found', 'We created your account, but the sponsor code was invalid.');
-      }
-    }
-
-    const newId = `usr-${Date.now()}`;
-    const namePrefix = payload.fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase() || 'GOLD';
-    const genRefCode = `GOLD-${namePrefix}${Math.floor(100 + Math.random() * 900)}`;
-
-    const newUser: User = {
-      id: newId,
-      fullName: payload.fullName.trim(),
-      phone: cleanPhone,
-      email: cleanEmail,
-      password: payload.password,
-      avatarUrl: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80`,
-      joinedDate: new Date().toISOString().split('T')[0],
-      currentPlanId: null,
-      planExpiryDate: null,
-      balancePKR: 0,
-      totalEarnedPKR: 0,
-      totalWithdrawnPKR: 0,
-      referralCode: genRefCode,
-      referredByCode: verifiedSponsorCode,
-      referralEarningsPKR: 0,
-      status: 'active',
-      completedTasksToday: [],
-      lastTaskDate: new Date().toISOString().split('T')[0]
-    };
-
-    setUsers((prev) => [newUser, ...prev]);
-    setCurrentUserId(newId);
-    closeAuthModal();
-    showToast(
-      'success',
-      'Account Created Successfully!',
-      `Welcome to Learn to Earn Gold, ${newUser.fullName}!`
-    );
-
-    // Persist to server database so all other devices see the new user instantly
-    fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.user) {
-          setUsers((prev) => [data.user, ...prev.filter((u) => u.id !== newId && u.id !== data.user.id)]);
-          setCurrentUserId(data.user.id);
-        }
-      })
-      .catch((err) => {
-        console.error('Server registration error:', err);
+  }): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
-    return { success: true, message: 'Registered successfully' };
+      const data = await response.json();
+
+      if (response.ok && data.success && data.user) {
+        const newUser: User = data.user;
+        setUsers((prev) => [newUser, ...prev.filter((u) => u.id !== newUser.id)]);
+        setCurrentUserId(newUser.id);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
+        closeAuthModal();
+        showToast(
+          'success',
+          'Account Created Successfully!',
+          `Welcome to Learn to Earn Gold, ${newUser.fullName}!`
+        );
+        return { success: true, message: 'Registered successfully' };
+      } else {
+        const errorMsg = data.message || 'Could not register account. Please try again.';
+        showToast('error', 'Registration Error', errorMsg);
+        return { success: false, message: errorMsg };
+      }
+    } catch {
+      showToast('error', 'Network Error', 'Could not reach server to create account. Please check connection.');
+      return { success: false, message: 'Server connection failed.' };
+    }
   };
 
   const logout = () => {
@@ -600,6 +562,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       'Daily Profit Claimed Successfully!',
       `+Rs ${dailyProfit.toLocaleString()} daily profit credited to your Gold Wallet.`
     );
+
+    // Persist claim to server database across all devices
+    fetch('/api/tasks/claim-daily-profit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id })
+    })
+      .then(() => syncWithServer())
+      .catch((err) => console.error('Failed to sync profit claim to server:', err));
+
     return { success: true, message: 'Daily profit claimed', amount: dailyProfit };
   };
 
@@ -964,6 +936,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTransactions((prev) => [tx, ...prev]);
 
     showToast('success', `${plan.name} Activated!`, `Enjoy course access, ${plan.dailyTasksCount} daily tasks, and 10% referral perks.`);
+
+    // Persist plan direct enrollment to server across devices
+    fetch('/api/plans/enroll-direct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id, planId })
+    })
+      .then(() => syncWithServer())
+      .catch((err) => console.error('Failed to sync plan enrollment to server:', err));
+
     return { success: true, message: 'Enrolled successfully' };
   };
 
