@@ -126,7 +126,7 @@ export const AdminLoginModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-md rounded-3xl bg-[#0b0c13] border-2 border-red-500/40 shadow-2xl shadow-red-950/60 overflow-hidden">
         {/* Ambient red security glow */}
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-44 h-44 bg-red-600/15 rounded-full blur-3xl pointer-events-none" />

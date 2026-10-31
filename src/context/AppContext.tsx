@@ -7,8 +7,10 @@ import {
   DailyTask,
   CourseModule,
   PlanTier,
-  PaymentMethod
+  PaymentMethod,
+  ThemeStyle
 } from '../types';
+import { DEFAULT_THEME } from '../data/themes';
 import {
   MEMBERSHIP_PLANS,
   INITIAL_PAYMENT_SETTINGS,
@@ -28,6 +30,8 @@ interface ToastNotification {
 interface AppContextType {
   isAdminMode: boolean;
   setIsAdminMode: (val: boolean) => void;
+  currentTheme: ThemeStyle;
+  setCurrentTheme: (theme: ThemeStyle) => void;
   currentUser: User;
   users: User[];
   plans: MembershipPlan[];
@@ -114,7 +118,8 @@ const STORAGE_KEYS = {
   TRANSACTIONS: 'lte_gold_txs_v2',
   TASKS: 'lte_gold_tasks_v2',
   ADMIN_MODE: 'lte_gold_admin_mode_v2',
-  ADMIN_AUTH: 'lte_gold_admin_auth_v2'
+  ADMIN_AUTH: 'lte_gold_admin_auth_v2',
+  THEME: 'lte_gold_theme_style_v1'
 };
 
 const GUEST_FALLBACK_USER: User = {
@@ -163,6 +168,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState<boolean>(false);
+
+  const [currentTheme, setCurrentThemeState] = useState<ThemeStyle>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.THEME);
+      if (
+        saved &&
+        ['emerald-wealth', 'obsidian-gold', 'sapphire-night', 'crimson-ruby', 'royal-slate'].includes(saved)
+      ) {
+        return saved as ThemeStyle;
+      }
+    } catch {}
+    return DEFAULT_THEME;
+  });
+
+  const setCurrentTheme = useCallback((newTheme: ThemeStyle) => {
+    setCurrentThemeState(newTheme);
+    try {
+      localStorage.setItem(STORAGE_KEYS.THEME, newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+      document.body.setAttribute('data-theme', newTheme);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    document.body.setAttribute('data-theme', currentTheme);
+  }, [currentTheme]);
 
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.USERS);
@@ -1429,6 +1461,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         isAdminMode,
         setIsAdminMode,
+        currentTheme,
+        setCurrentTheme,
         isAdminAuthenticated,
         isAdminLoginModalOpen,
         openAdminLoginModal,

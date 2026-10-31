@@ -29,8 +29,10 @@ import {
   Sliders,
   Crown,
   Plus,
-  Minus
+  Minus,
+  Palette
 } from 'lucide-react';
+import { THEME_PRESETS } from '../data/themes';
 
 export const AdminPanel: React.FC = () => {
   const {
@@ -50,7 +52,9 @@ export const AdminPanel: React.FC = () => {
     updateTaskReward,
     resetAllDemoData,
     showToast,
-    syncWithServer
+    syncWithServer,
+    currentTheme,
+    setCurrentTheme
   } = useApp();
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -1142,10 +1146,10 @@ export const AdminPanel: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3 self-end md:self-center">
-                    <div className="text-right">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-end">
+                    <div className="text-left md:text-right">
                       <span className="text-[10px] text-zinc-400 font-mono block">Amount</span>
-                      <span className="text-lg font-bold text-emerald-400 font-mono">
+                      <span className="text-base sm:text-lg font-bold text-emerald-400 font-mono">
                         Rs {dep.amountPKR.toLocaleString()}
                       </span>
                     </div>
@@ -1218,10 +1222,10 @@ export const AdminPanel: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3 self-end md:self-center">
-                    <div className="text-right">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-end">
+                    <div className="text-left md:text-right">
                       <span className="text-[10px] text-zinc-400 font-mono block">Payout Amount</span>
-                      <span className="text-lg font-bold text-amber-300 font-mono">
+                      <span className="text-base sm:text-lg font-bold text-amber-300 font-mono">
                         Rs {wd.amountPKR.toLocaleString()}
                       </span>
                     </div>
@@ -1547,6 +1551,55 @@ export const AdminPanel: React.FC = () => {
                     <span className="text-[10px] text-zinc-600 italic">(Button Hidden from Footer)</span>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Platform Theme Style Selector */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#0e1017] border border-amber-500/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-bold text-white font-mono uppercase">
+                    Platform Theme Style (All Visitors)
+                  </span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono">
+                  {THEME_PRESETS.find((p) => p.id === currentTheme)?.name || 'Theme'}
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400">
+                Choose the visual design and color identity for the academy portal. Updates immediately across all sections.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
+                {THEME_PRESETS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setCurrentTheme(t.id);
+                      showToast('success', 'Theme Style Changed', `Activated ${t.name} style.`);
+                    }}
+                    className={`p-3 rounded-xl border text-left flex items-center justify-between gap-2.5 transition-all cursor-pointer ${
+                      currentTheme === t.id
+                        ? 'bg-zinc-900 border-amber-400 ring-1 ring-amber-400/50 shadow-md'
+                        : 'bg-[#12151f] border-zinc-800 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center -space-x-1 shrink-0">
+                        <span className="w-3.5 h-3.5 rounded-full border border-black/40" style={{ backgroundColor: t.primaryColor }} />
+                        <span className="w-3 h-3 rounded-full border border-black/40" style={{ backgroundColor: t.accentColor }} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{t.name}</p>
+                        <p className="text-[10px] text-zinc-400 font-mono truncate">{t.tagline.split(',')[0]}</p>
+                      </div>
+                    </div>
+                    {currentTheme === t.id && (
+                      <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
 

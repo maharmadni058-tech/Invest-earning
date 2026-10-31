@@ -144,7 +144,7 @@ export const DailyTasksView: React.FC<DailyTasksViewProps> = ({
         </div>
 
         {/* Live Reset Timer Badge */}
-        <div className="bg-[#0b0c10] px-5 py-4 rounded-xl border border-zinc-800 text-center min-w-[190px] w-full md:w-auto">
+        <div className="bg-[#0b0c10] px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-zinc-800 text-center w-full md:w-auto md:min-w-[190px]">
           <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-mono block">
             Next Daily Reset (PKT)
           </span>
@@ -162,19 +162,19 @@ export const DailyTasksView: React.FC<DailyTasksViewProps> = ({
       {currentPlan ? (
         <div className="space-y-6">
           {/* Active Plan Daily Task Card */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1c1e2b] via-[#12141f] to-[#0a0b10] border-2 border-amber-500/50 p-6 sm:p-8 shadow-2xl">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1c1e2b] via-[#12141f] to-[#0a0b10] border-2 border-amber-500/50 p-4 sm:p-8 shadow-2xl">
             {/* Ambient Gold Glow */}
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-zinc-800">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 p-[1px] shadow-lg shadow-amber-500/20">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 p-[1px] shadow-lg shadow-amber-500/20 shrink-0">
                   <div className="w-full h-full bg-[#0d0e15] rounded-2xl flex items-center justify-center">
                     <Crown className="w-7 h-7 text-amber-400" />
                   </div>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                       Activated Payment Plan
@@ -182,7 +182,7 @@ export const DailyTasksView: React.FC<DailyTasksViewProps> = ({
                     <span className="text-xs text-zinc-500">•</span>
                     <span className="text-xs text-emerald-400 font-mono">100% Active</span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-white font-display mt-0.5">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white font-display mt-0.5 truncate">
                     {currentPlan.name}
                   </h2>
                   <p className="text-xs text-zinc-400 font-mono mt-0.5">
@@ -192,7 +192,7 @@ export const DailyTasksView: React.FC<DailyTasksViewProps> = ({
               </div>
 
               {/* Daily Current Profit Value Box */}
-              <div className="bg-[#090a10] px-5 py-3.5 rounded-2xl border border-amber-500/30 text-left md:text-right min-w-[200px]">
+              <div className="bg-[#090a10] px-4 sm:px-5 py-3 sm:py-3.5 rounded-2xl border border-amber-500/30 text-left md:text-right w-full md:w-auto md:min-w-[200px]">
                 <span className="text-[10px] text-zinc-400 uppercase tracking-widest font-mono block">
                   Today's Current Profit
                 </span>
@@ -210,7 +210,7 @@ export const DailyTasksView: React.FC<DailyTasksViewProps> = ({
             <div className="relative z-10 pt-6">
               {!isClaimedToday ? (
                 /* READY TO CLAIM TODAY */
-                <div className="rounded-2xl bg-[#090b10] border border-amber-500/30 p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="rounded-2xl bg-[#090b10] border border-amber-500/30 p-4 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
                   <div className="space-y-2 text-center md:text-left">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold font-mono">
                       <Sparkles className="w-3.5 h-3.5 fill-amber-300" />
@@ -240,7 +240,7 @@ export const DailyTasksView: React.FC<DailyTasksViewProps> = ({
                 </div>
               ) : (
                 /* ALREADY CLAIMED TODAY */
-                <div className="rounded-2xl bg-emerald-950/30 border-2 border-emerald-500/40 p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="rounded-2xl bg-emerald-950/30 border-2 border-emerald-500/40 p-4 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
                       <CheckCircle2 className="w-6 h-6" />

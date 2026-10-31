@@ -309,19 +309,61 @@ export const ReferralView: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#0b0c10] text-zinc-400 font-mono uppercase text-[10px] border-b border-zinc-800">
-                <tr>
-                  <th className="py-2.5 px-3">Student Name</th>
-                  <th className="py-2.5 px-3">Network Level</th>
-                  <th className="py-2.5 px-3">Phone</th>
-                  <th className="py-2.5 px-3">Enrolled Tier</th>
-                  <th className="py-2.5 px-3">Joined Date</th>
-                  <th className="py-2.5 px-3 text-right">Commission Rate</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/60 font-mono">
+          <>
+            {/* Mobile Card List (< sm: 640px) */}
+            <div className="block sm:hidden divide-y divide-zinc-800/80">
+              {displayedMembers.map((member) => {
+                let levelBadge = 'bg-amber-500/10 text-amber-300 border-amber-500/30';
+                if (member.level === 2) levelBadge = 'bg-blue-500/10 text-blue-300 border-blue-500/30';
+                if (member.level === 3) levelBadge = 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
+
+                return (
+                  <div key={member.id} className="p-3.5 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={member.avatarUrl}
+                          alt={member.fullName}
+                          className="w-8 h-8 rounded-full object-cover border border-zinc-700 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate">{member.fullName}</p>
+                          <p className="text-[10px] text-zinc-400 font-mono">{member.phone}</p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded border text-[10px] font-bold uppercase shrink-0 font-mono ${levelBadge}`}>
+                        L{member.level} ({member.rate})
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/50 text-[11px] font-mono">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-zinc-500">Tier:</span>
+                        <span className="px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-200 text-[10px] font-bold uppercase">
+                          {member.currentPlanId ? member.currentPlanId.toUpperCase() : 'FREE'}
+                        </span>
+                      </div>
+                      <span className="text-amber-400 font-bold">{member.rate} Payout</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table (>= sm: 640px) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#0b0c10] text-zinc-400 font-mono uppercase text-[10px] border-b border-zinc-800">
+                  <tr>
+                    <th className="py-2.5 px-3">Student Name</th>
+                    <th className="py-2.5 px-3">Network Level</th>
+                    <th className="py-2.5 px-3">Phone</th>
+                    <th className="py-2.5 px-3">Enrolled Tier</th>
+                    <th className="py-2.5 px-3">Joined Date</th>
+                    <th className="py-2.5 px-3 text-right">Commission Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60 font-mono">
                 {displayedMembers.map((member) => {
                   let levelBadge = 'bg-amber-500/10 text-amber-300 border-amber-500/30';
                   if (member.level === 2) levelBadge = 'bg-blue-500/10 text-blue-300 border-blue-500/30';
@@ -358,7 +400,8 @@ export const ReferralView: React.FC = () => {
               </tbody>
             </table>
           </div>
-        )}
+        </>
+      )}
       </div>
     </div>
   );

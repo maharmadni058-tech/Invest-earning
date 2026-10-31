@@ -202,17 +202,17 @@ export const CoursesView: React.FC = () => {
 
       {/* Official Certificate Generator Modal */}
       {showCertificateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-2xl rounded-2xl bg-[#0e1017] border-2 border-amber-500/40 p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl bg-[#0e1017] border-2 border-amber-500/40 p-4 sm:p-8 shadow-2xl space-y-5">
             <button
               onClick={() => setShowCertificateModal(false)}
-              className="absolute top-4 right-4 p-1 rounded-lg text-zinc-400 hover:text-white"
+              className="absolute top-3.5 right-3.5 p-1 rounded-lg text-zinc-400 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
 
             {/* Certificate Canvas Mock */}
-            <div className="border-4 border-amber-500/40 p-6 rounded-xl bg-gradient-to-br from-[#161822] via-[#0d0f15] to-[#141620] text-center relative overflow-hidden">
+            <div className="border-2 sm:border-4 border-amber-500/40 p-3.5 sm:p-6 rounded-xl bg-gradient-to-br from-[#161822] via-[#0d0f15] to-[#141620] text-center relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl" />
 
               <div className="flex items-center justify-center gap-2 mb-2">

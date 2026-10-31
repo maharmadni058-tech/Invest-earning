@@ -58,6 +58,37 @@ export const Header: React.FC<HeaderProps> = ({
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const logoClicksRef = useRef<{ count: number; lastTime: number }>({ count: 0, lastTime: 0 });
+
+  const isMasterAdminUser =
+    currentUser?.id === 'user-admin-master' ||
+    ['maharmadni58@gmail.com', 'maharmadni058@gmail.com'].includes(currentUser?.email?.toLowerCase() || '') ||
+    currentUser?.phone?.replace(/[^0-9]/g, '').endsWith('3087348367');
+
+  const handleLogoClick = () => {
+    const now = Date.now();
+    if (now - logoClicksRef.current.lastTime < 800) {
+      logoClicksRef.current.count += 1;
+    } else {
+      logoClicksRef.current.count = 1;
+    }
+    logoClicksRef.current.lastTime = now;
+
+    // Triple click on logo triggers admin entry
+    if (logoClicksRef.current.count >= 3) {
+      logoClicksRef.current.count = 0;
+      if (isAdminAuthenticated) {
+        setIsAdminMode(true);
+      } else {
+        openAdminLoginModal();
+      }
+      return;
+    }
+
+    // Default logo click: go to plans tab in user dashboard
+    setIsAdminMode(false);
+    setActiveTab('plans');
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -163,10 +194,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 sm:gap-6">
         {/* Brand Logo & Emblem */}
         <div
-          onClick={() => {
-            setIsAdminMode(false);
-            setActiveTab('plans');
-          }}
+          onClick={handleLogoClick}
           className="flex items-center gap-3 cursor-pointer group select-none shrink-0"
         >
           {/* Hexagonal Gold Shield Insignia */}
@@ -442,8 +470,8 @@ export const Header: React.FC<HeaderProps> = ({
                       </button>
                     </div>
 
-                    {/* Admin Switcher (Only if Admin is Authenticated) */}
-                    {isAdminAuthenticated && (
+                    {/* Admin Switcher (Strictly for authenticated Master Admin only) */}
+                    {isAdminAuthenticated && isMasterAdminUser && (
                       <div className="pb-1">
                         <button
                           onClick={() => {
@@ -453,7 +481,7 @@ export const Header: React.FC<HeaderProps> = ({
                           className="w-full flex items-center justify-center gap-2 p-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 font-bold text-xs transition-colors cursor-pointer"
                         >
                           <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
-                          <span>Switch to Super Admin Console</span>
+                          <span>Admin Console</span>
                         </button>
                       </div>
                     )}
@@ -477,49 +505,21 @@ export const Header: React.FC<HeaderProps> = ({
             </>
           )}
 
-          {/* Admin Login Trigger (Customizable via Portal Settings) */}
-          {!isAdminAuthenticated && (paymentSettings?.adminPortalSettings?.showInHeader !== false) && (
+          {/* ADMIN ACTIVE CONSOLE CONTROL BUTTON (Only visible when active in Admin Panel) */}
+          {isAdminMode && (
             <button
-              onClick={openAdminLoginModal}
-              className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 hover:text-white font-mono text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm shadow-red-950/40 active:scale-95 shrink-0"
-              title="Administrator Portal Login"
+              onClick={adminLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold transition-all shadow-md bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30 ring-2 ring-rose-400 active:scale-95 cursor-pointer"
+              title="Exit and lock admin console"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
-              <span>Admin</span>
+              <ShieldCheck className="w-4 h-4 text-white" />
+              <span>Exit Admin</span>
+              {totalPending > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-black text-rose-300 text-[10px] font-mono font-black">
+                  {totalPending}
+                </span>
+              )}
             </button>
-          )}
-
-          {/* ADMIN ACTIVE CONSOLE CONTROL BUTTON */}
-          {isAdminAuthenticated && (
-            isAdminMode ? (
-              <button
-                onClick={adminLogout}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold transition-all shadow-md bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30 ring-2 ring-rose-400 active:scale-95 cursor-pointer"
-                title="Exit and lock admin console"
-              >
-                <ShieldCheck className="w-4 h-4 text-white" />
-                <span>Exit Admin</span>
-                {totalPending > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-black text-rose-300 text-[10px] font-mono font-black">
-                    {totalPending}
-                  </span>
-                )}
-              </button>
-            ) : (
-              <button
-                onClick={() => setIsAdminMode(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 hover:text-white font-bold text-xs transition-all shadow-sm shadow-red-950/40 cursor-pointer"
-                title="Open Admin Console"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
-                <span>Admin Panel</span>
-                {totalPending > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-red-900 text-red-100 text-[10px] font-mono">
-                    {totalPending}
-                  </span>
-                )}
-              </button>
-            )
           )}
         </div>
       </div>

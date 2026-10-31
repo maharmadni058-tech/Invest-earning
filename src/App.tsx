@@ -24,24 +24,47 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { PlanTier } from './types';
 
 function MainAppContent() {
-  const { isAdminMode, openAdminLoginModal } = useApp();
+  const { isAdminMode, setIsAdminMode, isAdminAuthenticated, openAdminLoginModal } = useApp();
 
   const [activeTab, setActiveTab] = useState<string>('plans');
   const [isDepositOpen, setIsDepositOpen] = useState<boolean>(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState<boolean>(false);
   const [selectedPlanForDeposit, setSelectedPlanForDeposit] = useState<PlanTier | null>(null);
 
-  // Check for admin URL parameter (?admin) or /admin path - opens secure modal for manual login ONLY
+  // Check for admin URL parameter (?admin) or /admin path
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hasAdminParam = params.has('admin');
     const isAdminPath = window.location.pathname.toLowerCase().startsWith('/admin');
 
     if (hasAdminParam || isAdminPath) {
-      // NEVER auto login: strictly require manual email and password entry
-      openAdminLoginModal();
+      if (isAdminAuthenticated) {
+        setIsAdminMode(true);
+      } else {
+        openAdminLoginModal();
+      }
     }
-  }, [openAdminLoginModal]);
+  }, [openAdminLoginModal, isAdminAuthenticated, setIsAdminMode]);
+
+  // Global keyboard shortcut (Ctrl+Shift+A or Alt+A) for admin access
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isCtrlShiftA = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a');
+      const isAltA = e.altKey && (e.key === 'A' || e.key === 'a');
+
+      if (isCtrlShiftA || isAltA) {
+        e.preventDefault();
+        if (isAdminAuthenticated) {
+          setIsAdminMode(!isAdminMode);
+        } else {
+          openAdminLoginModal();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAdminAuthenticated, isAdminMode, openAdminLoginModal, setIsAdminMode]);
 
   const handleOpenDepositWithPlan = (planId: PlanTier) => {
     setSelectedPlanForDeposit(planId);

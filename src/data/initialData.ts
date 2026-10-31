@@ -191,9 +191,9 @@ export const INITIAL_PAYMENT_SETTINGS: PaymentGatewaySettings = {
   minWithdrawPKR: 300,
   withdrawFeePercent: 0,
   adminPortalSettings: {
-    footerButtonMode: 'button',
+    footerButtonMode: 'hidden',
     footerButtonLabel: 'Staff / Admin Access',
-    showInHeader: true
+    showInHeader: false
   }
 };
 

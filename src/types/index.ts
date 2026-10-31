@@ -1,6 +1,22 @@
 export type UserRole = 'user' | 'admin';
 export type UserStatus = 'active' | 'frozen';
 
+export type ThemeStyle =
+  | 'emerald-wealth'
+  | 'obsidian-gold'
+  | 'sapphire-night'
+  | 'crimson-ruby'
+  | 'royal-slate';
+
+export interface ThemeConfig {
+  id: ThemeStyle;
+  name: string;
+  tagline: string;
+  primaryColor: string;
+  accentColor: string;
+  previewBg: string;
+}
+
 export type PlanTier =
   | 'bronze'
   | 'silver'

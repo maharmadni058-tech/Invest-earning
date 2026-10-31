@@ -88,7 +88,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       {/* VIP Gold Card & Quick Balances */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Luxury Gold VIP Membership Card */}
-        <div className="lg:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1b1c24] via-[#12131a] to-[#0a0b0e] p-6 sm:p-7 border border-amber-500/30 shadow-2xl">
+        <div className="lg:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1b1c24] via-[#12131a] to-[#0a0b0e] p-6 sm:p-7 gold-card-border gold-card-hover shadow-2xl">
           {/* Subtle gold metallic light sheen */}
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-amber-600/5 rounded-full blur-3xl pointer-events-none" />

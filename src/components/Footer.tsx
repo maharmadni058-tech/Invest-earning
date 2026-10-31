@@ -109,7 +109,7 @@ export const Footer: React.FC = () => {
           <div className="flex items-center gap-4">
             <span className="text-zinc-600">Privacy &amp; Terms</span>
 
-            {/* Custom Footer Admin Button (Visible Mode) */}
+            {/* Optional Custom Footer Admin Button (Only if explicitly enabled by admin in settings) */}
             {portalSettings.footerButtonMode === 'button' && !isAdminAuthenticated && (
               <button
                 onClick={openAdminLoginModal}
@@ -118,18 +118,6 @@ export const Footer: React.FC = () => {
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
                 <span>{portalSettings.footerButtonLabel || 'Staff / Admin Access'}</span>
-              </button>
-            )}
-
-            {/* If Admin is already authenticated, show quick switch button */}
-            {isAdminAuthenticated && (
-              <button
-                onClick={() => setIsAdminMode(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-500/40 text-xs font-mono font-bold transition-all cursor-pointer"
-                title="Switch to Admin Console"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
-                <span>Open Admin Panel</span>
               </button>
             )}
           </div>

@@ -87,10 +87,10 @@ export const PlansSection: React.FC<PlansSectionProps> = ({ onSelectPlanForDepos
           return (
             <div
               key={plan.id}
-              className={`relative flex flex-col justify-between rounded-2xl bg-[#12141d] p-5 border transition-all duration-300 ${
+              className={`relative flex flex-col justify-between rounded-2xl bg-[#12141d] p-5 border gold-card-hover transition-all duration-300 ${
                 plan.popular
                   ? 'border-amber-400/80 shadow-xl shadow-amber-500/15 bg-gradient-to-b from-[#181a26] to-[#11131c]'
-                  : 'border-zinc-800 hover:border-amber-500/40 hover:bg-[#151722]'
+                  : 'border-zinc-800 hover:bg-[#151722]'
               } ${isCurrent ? 'ring-2 ring-emerald-500/60' : ''}`}
             >
               {/* Popular / Active Badge */}
@@ -212,9 +212,9 @@ export const PlansSection: React.FC<PlansSectionProps> = ({ onSelectPlanForDepos
           </div>
         </div>
 
-        <div className="text-right flex-shrink-0">
+        <div className="text-left sm:text-right w-full sm:w-auto">
           <span className="text-[11px] text-zinc-500 font-mono">SUPPORTED PAYMENT CHANNELS:</span>
-          <div className="flex items-center gap-2 mt-1 font-bold text-zinc-300">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1 font-bold text-zinc-300">
             <span className="px-2 py-0.5 rounded bg-red-950/60 border border-red-800 text-red-300 text-[10px]">
               JazzCash
             </span>

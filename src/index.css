@@ -1,29 +1,182 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --gold-primary: #e5b842;
-    --gold-light: #fef08a;
-    --gold-dark: #b48616;
-    --bg-dark: #090a0d;
-    --surface-dark: #12141a;
-    --surface-card: #171922;
-    --surface-border: #262938;
-  }
+/* 1. Global Box-Sizing & Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-  body {
-    background-color: #08090c;
-    color: #f3f4f6;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    overflow-x: hidden;
-  }
+/* 2. Global Viewport & Body Sizing */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
-  h1, h2, h3, .font-display {
-    font-family: 'Cinzel', serif, system-ui;
-  }
+/* ==========================================================
+   THEME STYLES PRESETS & DYNAMIC DESIGN TOKENS
+   ========================================================== */
 
-  .font-mono-numbers {
-    font-family: 'JetBrains Mono', monospace;
+:root,
+[data-theme="sapphire-night"] {
+  --theme-id: "sapphire-night";
+  --theme-bg: #030712;
+  --theme-surface: #0a1128;
+  --theme-surface-card: #0f1c3d;
+  --theme-surface-hover: #162854;
+  --theme-border: rgba(56, 189, 248, 0.26);
+  --theme-border-hover: rgba(99, 102, 241, 0.65);
+  --theme-primary: #38bdf8;
+  --theme-primary-hover: #0284c7;
+  --theme-accent: #818cf8;
+  --theme-accent-soft: rgba(56, 189, 248, 0.16);
+  --theme-glow: rgba(56, 189, 248, 0.25);
+  --gold-gradient: linear-gradient(135deg, #e0f2fe 0%, #38bdf8 35%, #818cf8 70%, #6366f1 100%);
+  --gold-gradient-bg: linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #6366f1 100%);
+  --hairline-gradient: linear-gradient(90deg, transparent, #38bdf8, #818cf8, transparent);
+}
+
+[data-theme="emerald-wealth"] {
+  --theme-id: "emerald-wealth";
+  --theme-bg: #030f0a;
+  --theme-surface: #071911;
+  --theme-surface-card: #0c2419;
+  --theme-surface-hover: #103022;
+  --theme-border: rgba(16, 185, 129, 0.22);
+  --theme-border-hover: rgba(245, 158, 11, 0.55);
+  --theme-primary: #10b981;
+  --theme-primary-hover: #059669;
+  --theme-accent: #fbbf24;
+  --theme-accent-soft: rgba(251, 191, 36, 0.15);
+  --theme-glow: rgba(16, 185, 129, 0.2);
+  --gold-gradient: linear-gradient(135deg, #a7f3d0 0%, #34d399 30%, #fbbf24 70%, #d97706 100%);
+  --gold-gradient-bg: linear-gradient(135deg, #059669 0%, #10b981 40%, #f59e0b 100%);
+  --hairline-gradient: linear-gradient(90deg, transparent, #10b981, #fbbf24, transparent);
+}
+
+[data-theme="obsidian-gold"] {
+  --theme-id: "obsidian-gold";
+  --theme-bg: #08090c;
+  --theme-surface: #0f1118;
+  --theme-surface-card: #161922;
+  --theme-surface-hover: #1d212e;
+  --theme-border: rgba(229, 184, 66, 0.24);
+  --theme-border-hover: rgba(229, 184, 66, 0.55);
+  --theme-primary: #e5b842;
+  --theme-primary-hover: #ca8a04;
+  --theme-accent: #f59e0b;
+  --theme-accent-soft: rgba(245, 158, 11, 0.15);
+  --theme-glow: rgba(229, 184, 66, 0.2);
+  --gold-gradient: linear-gradient(135deg, #fff3c4 0%, #e5b842 45%, #b78619 100%);
+  --gold-gradient-bg: linear-gradient(135deg, #d4af37 0%, #f59e0b 50%, #b48616 100%);
+  --hairline-gradient: linear-gradient(90deg, transparent, #e5b842, #f59e0b, transparent);
+}
+
+
+[data-theme="crimson-ruby"] {
+  --theme-id: "crimson-ruby";
+  --theme-bg: #0e0408;
+  --theme-surface: #190811;
+  --theme-surface-card: #240c18;
+  --theme-surface-hover: #311122;
+  --theme-border: rgba(244, 63, 94, 0.24);
+  --theme-border-hover: rgba(251, 113, 133, 0.55);
+  --theme-primary: #f43f5e;
+  --theme-primary-hover: #e11d48;
+  --theme-accent: #fda4af;
+  --theme-accent-soft: rgba(244, 63, 94, 0.15);
+  --theme-glow: rgba(244, 63, 94, 0.22);
+  --gold-gradient: linear-gradient(135deg, #ffe4e6 0%, #fb7185 45%, #e11d48 100%);
+  --gold-gradient-bg: linear-gradient(135deg, #e11d48 0%, #f43f5e 50%, #fda4af 100%);
+  --hairline-gradient: linear-gradient(90deg, transparent, #f43f5e, #fda4af, transparent);
+}
+
+[data-theme="royal-slate"] {
+  --theme-id: "royal-slate";
+  --theme-bg: #090b10;
+  --theme-surface: #111622;
+  --theme-surface-card: #182030;
+  --theme-surface-hover: #222b40;
+  --theme-border: rgba(203, 213, 225, 0.22);
+  --theme-border-hover: rgba(251, 191, 36, 0.5);
+  --theme-primary: #e2e8f0;
+  --theme-primary-hover: #cbd5e1;
+  --theme-accent: #eab308;
+  --theme-accent-soft: rgba(203, 213, 225, 0.15);
+  --theme-glow: rgba(203, 213, 225, 0.18);
+  --gold-gradient: linear-gradient(135deg, #ffffff 0%, #cbd5e1 45%, #f59e0b 100%);
+  --gold-gradient-bg: linear-gradient(135deg, #475569 0%, #64748b 50%, #d97706 100%);
+  --hairline-gradient: linear-gradient(90deg, transparent, #cbd5e1, #eab308, transparent);
+}
+
+body {
+  position: relative;
+  background-color: var(--theme-bg);
+  color: #f3f4f6;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Text style normal: clean, crisp, no unwanted italic distortion */
+h1, h2, h3, h4, h5, h6, p, span, a, button, input, select, textarea {
+  font-style: normal;
+}
+
+h1, h2, h3, .font-display {
+  font-family: 'Cinzel', serif, system-ui;
+  font-style: normal;
+}
+
+.font-mono-numbers {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+}
+
+/* 4. Responsive Containers */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* 5. Responsive Images, Videos, Iframes */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Prevent accidental text overflow from hash strings/long IDs */
+.break-words-safe {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* 6 & 7. Mobile Media Queries (<= 768px) */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 28px !important;
+    line-height: 1.25 !important;
+  }
+  .hide-on-mobile {
+    display: none !important;
+  }
+  .card, .box {
+    width: 100% !important;
+  }
+  .mobile-col {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  .mobile-w-full {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
@@ -40,36 +193,40 @@
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d4af37;
+  background: var(--theme-primary);
 }
 
-/* Gold Metallic & Gradient Utilities */
+/* Metallic & Gradient Utilities Powered by Active Theme */
 .gold-gradient-text {
-  background: linear-gradient(135deg, #fff3c4 0%, #e5b842 45%, #b78619 100%);
+  background: var(--gold-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gold-gradient-bg {
-  background: linear-gradient(135deg, #d4af37 0%, #f59e0b 50%, #b48616 100%);
+  background: var(--gold-gradient-bg);
+}
+
+.theme-hairline {
+  background: var(--hairline-gradient);
 }
 
 .gold-card-border {
-  border: 1px solid rgba(229, 184, 66, 0.22);
+  border: 1px solid var(--theme-border);
 }
 
 .gold-card-hover {
   transition: all 0.25s ease-in-out;
 }
 .gold-card-hover:hover {
-  border-color: rgba(229, 184, 66, 0.55);
-  box-shadow: 0 0 25px rgba(212, 175, 55, 0.12);
+  border-color: var(--theme-border-hover);
+  box-shadow: 0 0 25px var(--theme-glow);
 }
 
 .gold-glow {
-  box-shadow: 0 0 35px rgba(229, 184, 66, 0.18);
+  box-shadow: 0 0 35px var(--theme-glow);
 }
 
 .gold-glow-sm {
-  box-shadow: 0 0 15px rgba(229, 184, 66, 0.14);
+  box-shadow: 0 0 15px var(--theme-glow);
 }
